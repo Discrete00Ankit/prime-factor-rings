@@ -2,9 +2,9 @@
 
 An interactive, aesthetic mathematical web application inspired by the question paper visualization where each number from 1 to 100 is illustrated by concentric circular arcs corresponding to its prime factorization.
 
-![Visual Prime Rings](https://img.shields.io/badge/Math-Number%20Theory-blue?style=flat-square)
-![Pure Web](https://img.shields.io/badge/Stack-HTML5%20%7C%20CSS3%20%7C%20SVG%20%7C%20ES6-emerald?style=flat-square)
-![GitHub Pages Ready](https://img.shields.io/badge/Deploy-GitHub%20Pages-purple?style=flat-square)
+[![Live Web Application](https://img.shields.io/badge/Live%20Demo-discrete00ankit.github.io%2Fprime--factor--rings-success?style=for-the-badge&logo=github)](https://discrete00ankit.github.io/prime-factor-rings/)
+
+**🔗 Live Website:** [https://discrete00ankit.github.io/prime-factor-rings/](https://discrete00ankit.github.io/prime-factor-rings/)
 
 ---
 
@@ -34,22 +34,19 @@ In this visual representation:
 - 10×10 matrix matching the original question paper layout.
 - Filter by: All numbers, Primes only, Multiples of 2, 3, 5, 7, Primes $\ge 11$, and Perfect Squares.
 - Search box to quickly locate any integer.
-- Click on any number to open an inspection modal showing its enlarged ring, algebraic formula, prime breakdown, and buttons to set it as Number A or B.
+- Real-time mouse glide inspector with cursor tooltip and floating bottom HUD.
 
-### 2. 🟢 GCD Visual Studio ("Minimum Arcs Rule")
-- Visualizes $\gcd(A, B)$ using the **Minimum Arcs Rule**:
-  $$\nu_p(\gcd(A, B)) = \min(\nu_p(A), \nu_p(B))$$
-- Side-by-side comparison of Number A and Number B rings and animated combination into the GCD circle.
-- Compares prime power tokens and shows why common divisors only take the shared intersection.
-- Preloaded with the exam question pair: $A = 60$ and $B = 72 \implies \gcd(60, 72) = 12$.
+### 2. 🟢 Animated GCD Visual Studio ("Smaller Count of Arcs")
+- Visualizes $\gcd(A, B)$ using the **Smaller Count Rule**: for each prime color, take the smaller number of arcs shared by both numbers.
+- Side-by-side comparison of Number A and Number B rings and animated step-by-step token transfer into the GCD basket.
+- Preloaded with presets including $64 \ \& \ 100$, $60 \ \& \ 72$, and $24 \ \& \ 36$.
 
-### 3. 🟣 LCM Visual Studio ("Maximum Arcs Rule")
-- Visualizes $\text{lcm}(A, B)$ using the **Maximum Arcs Rule**:
-  $$\nu_p(\text{lcm}(A, B)) = \max(\nu_p(A), \nu_p(B))$$
-- Combines prime power arcs into the resulting LCM circle ($360$ for 60 & 72).
+### 3. 🟣 LCM Visual Studio ("Largest Count of Arcs")
+- Visualizes $\text{lcm}(A, B)$ using the **Largest Count Rule**: for each prime color, take the maximum count of arcs appearing in either number.
+- Combines prime power arcs into the resulting LCM circle ($360$ for 60 & 72; $1,600$ for 64 & 100).
 - **The Arc Conservation Theorem**:
   $$\gcd(A, B) \times \text{lcm}(A, B) = A \times B$$
-  Demonstrates that every prime arc from $A$ and $B$ is conserved ($\min + \max = \text{total}$).
+  Demonstrates that every prime arc from $A$ and $B$ is conserved ($\text{smaller count} + \text{largest count} = \text{total arcs}$).
 
 ### 4. ⚖️ Euclid's Division Algorithm Lab ("When Arcs Get Too Big")
 - Mathematical motivation: For large numbers (e.g., $2024$ and $748$), factoring requires searching for primes up to $\sqrt{N}$ and counting dozens of arcs is impractical.
