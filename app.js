@@ -1,8 +1,9 @@
 /**
  * Main Application Logic for Prime Factor Rings Visualizer (Enhanced)
  * Manages UI rendering, SVG generation, permanently visible factorization dock & HUD,
- * interactive cursor glide tooltip, animated step-by-step arc counting for GCD,
- * parallel dual-column Euclidean division algorithm, and KaTeX math typesetting.
+ * interactive cursor glide tooltip, in-place circle pinning & click-to-lock,
+ * animated step-by-step arc counting for GCD, parallel Euclidean division algorithm,
+ * and KaTeX math typesetting.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     colorMode: 'paper', // 'paper' | 'spectrum'
     activeFilter: 'all',
     hoveredNumber: 64,
+    isLocked: false,
+    lockedNumber: null,
     
     // Euclid Lab State
     euclidA: 2024,
@@ -246,6 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setActiveTab(targetId) {
     state.activeTab = targetId;
+    unlockNumber(); // Clean up lock state when switching tabs
+
     tabBtns.forEach(btn => {
       const isActive = btn.dataset.tab === targetId;
       btn.classList.toggle('active', isActive);
@@ -299,11 +304,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSideDock();
     renderGCDStudio();
     renderLCMStudio();
-    updateHoverInspector(state.hoveredNumber);
+    updateHoverInspector(state.isLocked ? state.lockedNumber : state.hoveredNumber, state.isLocked);
   });
 
   /* ==========================================================================
-     1–100 Visual Grid Controller with Mouse Hover/Drag & Cursor Tooltip
+     1–100 Visual Grid Controller with Mouse Hover/Drag, In-Place Pinning & Lock
      ========================================================================== */
   const matrixContainer = document.getElementById('matrixContainer');
   const filterChips = document.querySelectorAll('#filterChips .chip-btn');
@@ -319,7 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (num === state.selectedA) node.classList.add('selected-a');
       if (num === state.selectedB) node.classList.add('selected-b');
-      if (num === state.hoveredNumber) node.classList.add('hover-active');
+      if (state.isLocked && num === state.lockedNumber) node.classList.add('locked-selected-node');
+      else if (num === state.hoveredNumber) node.classList.add('hover-active');
 
       const svg = createRingSVG(num, { size: 68 });
       node.appendChild(svg);
@@ -333,13 +339,17 @@ document.addEventListener('DOMContentLoaded', () => {
         handleNodeHover(num, node, e);
       });
 
+      // Click to LOCK number and show in-place pin popover
       node.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (e.shiftKey) {
+          // Shortcut: Shift-click directly sets as B
           setSelectedPair(state.selectedA, num);
+          lockNumber(num, node);
         } else {
-          setSelectedPair(num, state.selectedB);
+          // Click locks this number firmly!
+          lockNumber(num, node);
         }
-        handleNodeHover(num, node, e);
       });
 
       matrixContainer.appendChild(node);
@@ -356,14 +366,147 @@ document.addEventListener('DOMContentLoaded', () => {
     state.hoveredNumber = num;
 
     const allNodes = matrixContainer.querySelectorAll('.number-node');
-    allNodes.forEach(n => n.classList.remove('hover-active'));
-    if (nodeElement) nodeElement.classList.add('hover-active');
+    allNodes.forEach(n => {
+      n.classList.remove('hover-active');
+    });
+    if (nodeElement && !nodeElement.classList.contains('locked-selected-node')) {
+      nodeElement.classList.add('hover-active');
+    }
 
-    updateHoverInspector(num);
+    // CRITICAL: Only update Inspector and HUD if NOT locked!
+    // When locked, the side dock and HUD remain 100% frozen on state.lockedNumber!
+    if (!state.isLocked) {
+      updateHoverInspector(num, false);
+    }
+
     if (e) {
       updateCursorTooltip(num, e);
     }
   }
+
+  function lockNumber(num, nodeElement) {
+    state.isLocked = true;
+    state.lockedNumber = num;
+
+    const allNodes = matrixContainer.querySelectorAll('.number-node');
+    allNodes.forEach(n => {
+      const isTarget = parseInt(n.dataset.number, 10) === num;
+      n.classList.toggle('locked-selected-node', isTarget);
+      n.classList.remove('hover-active');
+    });
+
+    updateHoverInspector(num, true);
+    showCirclePopover(num, nodeElement);
+  }
+
+  function unlockNumber() {
+    state.isLocked = false;
+    state.lockedNumber = null;
+
+    const allNodes = matrixContainer.querySelectorAll('.number-node');
+    allNodes.forEach(n => n.classList.remove('locked-selected-node'));
+
+    hideCirclePopover();
+    updateHoverInspector(state.hoveredNumber || state.selectedA, false);
+  }
+
+  /* In-Place Circle Pin Popover */
+  function showCirclePopover(num, nodeElement) {
+    const popover = document.getElementById('circlePinPopover');
+    if (!popover || !nodeElement) return;
+
+    const rect = nodeElement.getBoundingClientRect();
+    const numEl = document.getElementById('popoverNum');
+    const formulaEl = document.getElementById('popoverFormula');
+
+    if (numEl) numEl.textContent = num;
+    if (formulaEl) {
+      const isP = MathEngine.isPrime(num);
+      if (num === 1) formulaEl.innerHTML = `\\(1\\) (Unit)`;
+      else if (isP) formulaEl.innerHTML = `\\(${num}\\) (Prime)`;
+      else formulaEl.innerHTML = `\\(${num} = ${MathEngine.formatFactorization(num)}\\)`;
+      renderLatexInDOM(formulaEl);
+    }
+
+    const btnPinA = document.getElementById('popoverBtnPinA');
+    const btnPinB = document.getElementById('popoverBtnPinB');
+    if (btnPinA) {
+      btnPinA.textContent = `📌 Set ${num} as A`;
+      btnPinA.onclick = (e) => {
+        e.stopPropagation();
+        setSelectedPair(num, state.selectedB);
+        unlockNumber();
+      };
+    }
+    if (btnPinB) {
+      btnPinB.textContent = `📌 Set ${num} as B`;
+      btnPinB.onclick = (e) => {
+        e.stopPropagation();
+        setSelectedPair(state.selectedA, num);
+        unlockNumber();
+      };
+    }
+
+    // Position popover right above the circle (or below if too near viewport top)
+    const centerX = rect.left + rect.width / 2;
+    let topY = rect.top;
+
+    if (topY < 95) {
+      topY = rect.bottom + 10;
+      popover.style.transform = 'translate(-50%, 0)';
+    } else {
+      popover.style.transform = 'translate(-50%, -100%) translateY(-8px)';
+    }
+
+    popover.style.left = `${centerX}px`;
+    popover.style.top = `${topY}px`;
+    popover.style.display = 'block';
+  }
+
+  function hideCirclePopover() {
+    const popover = document.getElementById('circlePinPopover');
+    if (popover) {
+      popover.style.display = 'none';
+    }
+  }
+
+  const popoverCloseBtn = document.getElementById('popoverCloseBtn');
+  if (popoverCloseBtn) {
+    popoverCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      unlockNumber();
+    });
+  }
+
+  // Keyboard Shortcuts ('A' and 'B' for instant pinning, Esc for unlock)
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+    const activeNum = state.isLocked ? state.lockedNumber : state.hoveredNumber;
+    if (!activeNum) return;
+
+    if (e.key === 'a' || e.key === 'A') {
+      setSelectedPair(activeNum, state.selectedB);
+      if (state.isLocked) unlockNumber();
+    } else if (e.key === 'b' || e.key === 'B') {
+      setSelectedPair(state.selectedA, activeNum);
+      if (state.isLocked) unlockNumber();
+    } else if (e.key === 'Escape') {
+      unlockNumber();
+    }
+  });
+
+  // Clicking anywhere outside the grid nodes, popover, dock, or HUD unlocks
+  document.addEventListener('click', (e) => {
+    const isNode = e.target.closest('.number-node');
+    const isPopover = e.target.closest('#circlePinPopover');
+    const isDock = e.target.closest('.grid-side-dock');
+    const isHud = e.target.closest('.homepage-floating-hud');
+
+    if (!isNode && !isPopover && !isDock && !isHud && state.isLocked) {
+      unlockNumber();
+    }
+  });
 
   function updateCursorTooltip(num, e) {
     if (!gridHoverTooltip) return;
@@ -390,6 +533,13 @@ document.addEventListener('DOMContentLoaded', () => {
       arcsSummary = parts.join(', ');
     }
 
+    let lockTip = 'Click circle to fix & pin • Press A or B keys';
+    if (state.isLocked && state.lockedNumber === num) {
+      lockTip = '🔒 Fixed on this number • Click elsewhere to unlock';
+    } else if (state.isLocked) {
+      lockTip = `🔒 Fixed on ${state.lockedNumber} • Click to switch to ${num}`;
+    }
+
     gridHoverTooltip.innerHTML = `
       <div class="tooltip-top-row">
         <span class="tooltip-num-badge">${num}</span>
@@ -397,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="tooltip-formula-text">${formulaText}</div>
       <div class="tooltip-arcs-text">${arcsSummary}</div>
-      <div class="tooltip-tip-text">Click to pin A • Shift+Click pin B</div>
+      <div class="tooltip-tip-text">${lockTip}</div>
     `;
 
     const padding = 16;
@@ -533,6 +683,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const dockPinA = document.getElementById('dockPinA');
   const dockPinB = document.getElementById('dockPinB');
 
+  const dockHeaderPill = document.getElementById('dockHeaderPill');
+  const dockStatusSubtext = document.getElementById('dockStatusSubtext');
+  const dockUnlockBtn = document.getElementById('dockUnlockBtn');
+
   const dockInputA = document.getElementById('dockInputA');
   const dockInputB = document.getElementById('dockInputB');
   const dockGcdFormula = document.getElementById('dockGcdFormula');
@@ -542,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dockLcmRule = document.getElementById('dockLcmRule');
   const dockLcmRing = document.getElementById('dockLcmRing');
 
-  function updateHoverInspector(num) {
+  function updateHoverInspector(num, isLocked = false) {
     // 1. Update Sticky Side Dock
     if (dockRingWrapper) {
       dockRingWrapper.innerHTML = '';
@@ -602,8 +756,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (dockPinA) dockPinA.textContent = `📌 Pin ${num} as A`;
-    if (dockPinB) dockPinB.textContent = `📌 Pin ${num} as B`;
+    if (dockHeaderPill) {
+      dockHeaderPill.textContent = isLocked ? `🔒 Fixed: ${num}` : `🔍 Inspector`;
+      dockHeaderPill.style.background = isLocked ? '#eff6ff' : '#f1f5f9';
+      dockHeaderPill.style.color = isLocked ? '#1d4ed8' : '#334155';
+      dockHeaderPill.style.borderColor = isLocked ? '#bfdbfe' : 'var(--border-light)';
+    }
+    if (dockStatusSubtext) {
+      dockStatusSubtext.textContent = isLocked ? 'Locked • Click Pin A/B' : 'Click circle to fix';
+    }
+    if (dockUnlockBtn) {
+      dockUnlockBtn.style.display = isLocked ? 'inline-block' : 'none';
+      dockUnlockBtn.onclick = (e) => {
+        e.stopPropagation();
+        unlockNumber();
+      };
+    }
+
+    if (dockPinA) {
+      dockPinA.textContent = `📌 Pin ${num} as A`;
+      dockPinA.onclick = () => {
+        setSelectedPair(num, state.selectedB);
+        if (state.isLocked) unlockNumber();
+      };
+    }
+    if (dockPinB) {
+      dockPinB.textContent = `📌 Pin ${num} as B`;
+      dockPinB.onclick = () => {
+        setSelectedPair(state.selectedA, num);
+        if (state.isLocked) unlockNumber();
+      };
+    }
 
     // 2. Update Bottom Floating HUD (Always in viewport when scrolling)
     const hudRingWrapper = document.getElementById('hudRingWrapper');
@@ -613,6 +796,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hudArcs = document.getElementById('hudArcs');
     const hudPinA = document.getElementById('hudPinA');
     const hudPinB = document.getElementById('hudPinB');
+    const hudLockStatus = document.getElementById('hudLockStatus');
+    const hudUnlockBtn = document.getElementById('hudUnlockBtn');
 
     if (hudRingWrapper) {
       hudRingWrapper.innerHTML = '';
@@ -628,6 +813,17 @@ document.addEventListener('DOMContentLoaded', () => {
       hudFormula.innerHTML = formulaLatex;
       renderLatexInDOM(hudFormula);
     }
+    if (hudLockStatus) {
+      hudLockStatus.style.display = isLocked ? 'inline-block' : 'none';
+    }
+    if (hudUnlockBtn) {
+      hudUnlockBtn.style.display = isLocked ? 'inline-flex' : 'none';
+      hudUnlockBtn.onclick = (e) => {
+        e.stopPropagation();
+        unlockNumber();
+      };
+    }
+
     if (hudArcs) {
       if (num === 1) {
         hudArcs.textContent = 'Single grey circle (Unit element)';
@@ -643,21 +839,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (hudPinA) {
       hudPinA.textContent = `📌 Pin A (${num})`;
-      hudPinA.onclick = () => setSelectedPair(num, state.selectedB);
+      hudPinA.onclick = () => {
+        setSelectedPair(num, state.selectedB);
+        if (state.isLocked) unlockNumber();
+      };
     }
     if (hudPinB) {
       hudPinB.textContent = `📌 Pin B (${num})`;
-      hudPinB.onclick = () => setSelectedPair(state.selectedA, num);
+      hudPinB.onclick = () => {
+        setSelectedPair(state.selectedA, num);
+        if (state.isLocked) unlockNumber();
+      };
     }
   }
-
-  dockPinA.addEventListener('click', () => {
-    setSelectedPair(state.hoveredNumber, state.selectedB);
-  });
-
-  dockPinB.addEventListener('click', () => {
-    setSelectedPair(state.selectedA, state.hoveredNumber);
-  });
 
   function renderSideDock() {
     const a = parseInt(dockInputA.value, 10) || state.selectedA || 64;
@@ -1487,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', () => {
      Initial App Boot
      ========================================================================== */
   renderGrid100();
-  updateHoverInspector(64);
+  updateHoverInspector(64, false);
   renderSideDock();
   renderGCDStudio();
   renderLCMStudio();

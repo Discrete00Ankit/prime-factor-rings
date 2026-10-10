@@ -479,6 +479,14 @@ header.site-header {
   background: #faf5ff;
 }
 
+.number-node.locked-selected-node {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.5), 0 8px 20px rgba(37, 99, 235, 0.3) !important;
+  transform: translateY(-4px) scale(1.1) !important;
+  z-index: 35 !important;
+  background: #eff6ff !important;
+}
+
 .number-node.dimmed {
   opacity: 0.2;
   filter: grayscale(85%);
@@ -984,6 +992,142 @@ header.site-header {
 
 .btn-hud-b:hover {
   background: #f3e8ff;
+}
+
+/* ==========================================================================
+   IN-PLACE CIRCLE PINNING POPOVER & LOCK CONTROLS
+   ========================================================================== */
+.circle-pin-popover {
+  position: fixed;
+  z-index: 10000;
+  background: #ffffff;
+  border: 1.5px solid #2563eb;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(37, 99, 235, 0.2);
+  padding: 10px 14px;
+  animation: popoverFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate(-50%, -100%) translateY(-8px);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translate(-50%, -100%) translateY(0) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -100%) translateY(-8px) scale(1); }
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.popover-num {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.popover-formula {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.popover-close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 800;
+  transition: var(--transition-fast);
+}
+
+.popover-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.popover-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pop-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.pop-btn-a {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.pop-btn-a:hover {
+  background: #059669;
+  color: #ffffff;
+}
+
+.pop-btn-b {
+  background: #faf5ff;
+  color: #581c87;
+  border-color: #e9d5ff;
+}
+
+.pop-btn-b:hover {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.btn-unlock-toggle {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-unlock-toggle:hover {
+  background: #dbeafe;
+}
+
+.hud-lock-status {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.btn-hud-unlock {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-hud-unlock:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 /* ==========================================================================

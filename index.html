@@ -165,8 +165,9 @@
             <!-- SECTION A: Prime Factorization Inspector (ALWAYS AT TOP, 100% VISIBLE) -->
             <div class="dock-section-inspector">
               <div class="dock-card-header">
-                <span class="dock-header-pill">🔍 Hover Inspector</span>
-                <span class="dock-subtext">Hover on any number</span>
+                <span class="dock-header-pill" id="dockHeaderPill">🔍 Hover Inspector</span>
+                <button class="btn-unlock-toggle" id="dockUnlockBtn" style="display: none;" title="Unlock to follow mouse">🔓 Follow Mouse</button>
+                <span class="dock-subtext" id="dockStatusSubtext">Click circle to fix</span>
               </div>
 
               <div class="inspector-compact-layout">
@@ -256,12 +257,14 @@
               <span class="hud-number" id="hudNumber">64</span>
               <span class="hud-tag" id="hudTag">Composite</span>
               <span class="hud-formula" id="hudFormula">\(64 = 2^6\)</span>
+              <span class="hud-lock-status" id="hudLockStatus" style="display: none;">🔒 Fixed</span>
             </div>
             <div class="hud-arcs" id="hudArcs">6 Green Arcs (Prime 2)</div>
           </div>
           <div class="hud-actions">
             <button class="btn-hud btn-hud-a" id="hudPinA">📌 Pin A</button>
             <button class="btn-hud btn-hud-b" id="hudPinB">📌 Pin B</button>
+            <button class="btn-hud btn-hud-unlock" id="hudUnlockBtn" style="display: none;" title="Unlock to follow mouse">🔓</button>
           </div>
         </div>
       </div>
@@ -823,6 +826,23 @@
 
   <!-- Floating Cursor Glide Tooltip -->
   <div id="gridHoverTooltip" class="grid-hover-tooltip" style="display: none;"></div>
+
+  <!-- In-Place Click Pinning Popover (Appears directly at clicked circle) -->
+  <div id="circlePinPopover" class="circle-pin-popover" style="display: none;">
+    <div class="popover-content">
+      <div class="popover-header">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span class="popover-num" id="popoverNum">48</span>
+          <span class="popover-formula" id="popoverFormula">\(48 = 2^4 \times 3\)</span>
+        </div>
+        <button class="popover-close-btn" id="popoverCloseBtn" title="Close">✕</button>
+      </div>
+      <div class="popover-actions">
+        <button class="pop-btn pop-btn-a" id="popoverBtnPinA">📌 Pin as Number A</button>
+        <button class="pop-btn pop-btn-b" id="popoverBtnPinB">📌 Pin as Number B</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="math-engine.js"></script>
