@@ -1,7 +1,7 @@
 /* ==========================================================================
    Prime Factorization Arc Visualizer - Design System & Enhanced Styles
    Aesthetic, clean, light-mode palette inspired by academic math illustrations.
-   Always-visible sticky side dock, parallel Euclidean division layout, KaTeX.
+   Permanently visible unified side dock, animated GCD/LCM arc counter, plain English.
    ========================================================================== */
 
 :root {
@@ -9,7 +9,7 @@
   --bg-main: #fbf9f5;
   --bg-card: #ffffff;
   --bg-card-subtle: #f8fafc;
-  --bg-glass: rgba(255, 255, 255, 0.94);
+  --bg-glass: rgba(255, 255, 255, 0.95);
   
   /* Text colors */
   --text-main: #0f172a;
@@ -358,7 +358,7 @@ header.site-header {
 }
 
 /* ==========================================================================
-   TAB 1: 1–100 Visual Grid with ALWAYS VISIBLE Sticky Side Dock
+   TAB 1: 1–100 Visual Grid with PERMANENTLY VISIBLE Unified Side Dock
    ========================================================================== */
 .grid-split-layout {
   display: grid;
@@ -507,41 +507,45 @@ header.site-header {
 }
 
 /* ==========================================================================
-   STICKY SIDE DOCK (Always visible in its entirety when scrolling!)
+   PERMANENTLY VISIBLE STICKY SIDE DOCK
    ========================================================================== */
 .grid-side-dock {
   position: sticky;
-  top: 84px;
+  top: 76px;
   align-self: start;
+  z-index: 50;
+}
+
+.unified-side-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  z-index: 50;
-  max-height: calc(100vh - 100px);
+  gap: 12px;
+  max-width: 370px;
+  max-height: calc(100vh - 90px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.side-dock-card {
-  padding: 18px 20px;
-  border-radius: 18px;
-}
-
 .dock-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .dock-header-pill {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 3px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   background: #f1f5f9;
   color: #334155;
@@ -549,21 +553,21 @@ header.site-header {
 }
 
 .dock-subtext {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 
-/* Compact Inspector Layout */
+/* Compact Inspector Section */
 .inspector-compact-layout {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 8px;
 }
 
 .inspector-ring-wrapper {
-  width: 76px;
-  height: 76px;
+  width: 68px;
+  height: 68px;
   flex-shrink: 0;
 }
 
@@ -582,11 +586,11 @@ header.site-header {
 .inspector-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .inspector-number-title {
-  font-size: 1.9rem;
+  font-size: 1.8rem;
   font-weight: 900;
   color: #0f172a;
   line-height: 1.1;
@@ -596,7 +600,7 @@ header.site-header {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -606,7 +610,7 @@ header.site-header {
 .tag-unit { background: #f1f5f9; color: #475569; }
 
 .inspector-formula {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
@@ -618,19 +622,19 @@ header.site-header {
 .inspector-chips-wrapper {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 
 .arc-chip-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: #f8fafc;
   border: 1px solid var(--border-light);
-  border-radius: 8px;
-  padding: 3px 8px;
-  font-size: 0.8rem;
+  border-radius: 7px;
+  padding: 3px 7px;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #1e293b;
 }
@@ -642,9 +646,9 @@ header.site-header {
 
 .btn-primary-sm {
   flex: 1;
-  padding: 8px 10px;
-  border-radius: 9px;
-  font-size: 0.85rem;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   border: none;
@@ -665,34 +669,40 @@ header.site-header {
 }
 .btn-pin-b:hover { background: #f3e8ff; }
 
+.dock-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 2px 0;
+}
+
 /* Quick GCD & LCM Dock Box */
 .quick-inputs-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .quick-input-col {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .quick-input-col label {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .dock-num-input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 8px;
   border: 1.5px solid var(--border-light);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-family: var(--font-mono);
   font-weight: 700;
   outline: none;
@@ -707,9 +717,9 @@ header.site-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 10px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
   border: 1px solid var(--border-light);
 }
 
@@ -726,29 +736,29 @@ header.site-header {
 .quick-res-left {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .quick-res-role {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .quick-res-formula {
-  font-size: 1.02rem;
+  font-size: 0.98rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 .quick-res-rule {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .quick-res-ring {
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
 }
 
@@ -760,16 +770,16 @@ header.site-header {
 .quick-nav-actions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 5px;
+  margin-top: 4px;
 }
 
 .btn-subtle {
   background: #f8fafc;
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 7px 10px;
-  font-size: 0.84rem;
+  padding: 6px 9px;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #334155;
   cursor: pointer;
@@ -783,7 +793,201 @@ header.site-header {
 }
 
 /* ==========================================================================
-   Section 2 & 3: GCD & LCM Full Studios
+   PERMANENT FLOATING FACTORIZATION CONTROLS (HUD & CURSOR GLIDE TOOLTIP)
+   ========================================================================== */
+/* Floating Cursor Glide Tooltip */
+.grid-hover-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  font-family: var(--font-sans);
+  max-width: 280px;
+  min-width: 180px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.grid-hover-tooltip.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tooltip-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.tooltip-num-badge {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #38bdf8;
+  line-height: 1;
+}
+
+.tooltip-type-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.tooltip-formula-text {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.tooltip-arcs-text {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.tooltip-tip-text {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+/* Floating Factorization HUD (Permanently visible at bottom of screen) */
+.homepage-floating-hud {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid #3b82f6;
+  border-radius: 999px;
+  padding: 8px 18px 8px 12px;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(59, 130, 246, 0.15);
+  display: flex;
+  align-items: center;
+  transition: all 0.25s ease;
+  max-width: calc(100vw - 32px);
+}
+
+.hud-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hud-ring-wrapper {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.hud-ring-wrapper svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hud-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hud-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hud-number {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.hud-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.hud-formula {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.hud-arcs {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.hud-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.btn-hud {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-hud-a {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.btn-hud-a:hover {
+  background: #d1fae5;
+}
+
+.btn-hud-b {
+  background: #faf5ff;
+  color: #6b21a8;
+  border-color: #e9d5ff;
+}
+
+.btn-hud-b:hover {
+  background: #f3e8ff;
+}
+
+/* ==========================================================================
+   Section 2 & 3: GCD & LCM Full Studios with ANIMATED STEP-BY-STEP ARC COUNTING
    ========================================================================== */
 .studio-layout {
   display: flex;
@@ -952,13 +1156,236 @@ header.site-header {
   margin-top: 5px;
 }
 
-.operator-sign {
-  font-size: 2.1rem;
-  font-weight: 900;
-  color: var(--text-light);
+/* Plain English Operator Box */
+.operator-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   text-align: center;
 }
 
+.op-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.op-arrow {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #3b82f6;
+}
+
+/* ==========================================================================
+   NEW: ANIMATED STEP-BY-STEP ARC COUNTING STAGE
+   ========================================================================== */
+.arc-counting-anim-card {
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.anim-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.anim-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.anim-icon-badge {
+  font-size: 1.6rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.anim-title-area h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.anim-title-area p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.anim-controls-area {
+  display: flex;
+  gap: 8px;
+}
+
+.anim-narrative-banner {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  line-height: 1.55;
+  margin-bottom: 20px;
+  transition: all 0.25s ease;
+}
+
+.anim-stage-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.anim-rack-box {
+  background: #f8fafc;
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rack-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.rack-count-indicator {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.tokens-flex-rack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Tokens */
+.token-coin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.token-coin.dimmed {
+  opacity: 0.22;
+  filter: grayscale(80%);
+}
+
+.token-coin.active-inspect {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.4);
+  animation: pulseScale 1s infinite alternate;
+}
+
+@keyframes pulseScale {
+  from { transform: scale(1.15); }
+  to { transform: scale(1.24); }
+}
+
+.anim-comparator-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.comparator-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 900;
+  box-shadow: var(--shadow-sm);
+}
+
+.comparator-rule-text {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Base Collector Shelf */
+.anim-collector-shelf {
+  background: #ecfdf5;
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+.shelf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.shelf-total-badge {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #065f46;
+}
+
+.collector-tokens-rack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Analysis Table */
 .analysis-panel {
   background: #ffffff;
   border: 1px solid var(--border-light);
@@ -1071,7 +1498,7 @@ header.site-header {
 }
 
 /* ==========================================================================
-   Section 4: Euclid's Algorithm Lab (NEW PARALLEL SOLVING DASHBOARD)
+   Section 4: Euclid's Algorithm Lab (PARALLEL SOLVING DASHBOARD)
    ========================================================================== */
 .euclid-main-card {
   padding: 24px;
@@ -1142,7 +1569,6 @@ header.site-header {
   align-items: start;
 }
 
-/* Left Column: Entire Solving Process Ladder */
 .euclid-process-column {
   background: #ffffff;
   border: 1px solid var(--border-light);
@@ -1191,7 +1617,6 @@ header.site-header {
   line-height: 1.5;
 }
 
-/* Ladder Step Cards */
 .euclid-ladder-container {
   display: flex;
   flex-direction: column;
@@ -1268,7 +1693,6 @@ header.site-header {
   font-weight: 800;
 }
 
-/* Grand Result Card */
 .euclid-grand-result-card {
   background: #ecfdf5;
   border: 2px solid #10b981;
@@ -1303,7 +1727,6 @@ header.site-header {
   line-height: 1.5;
 }
 
-/* Right Column: Step Spotlight & Geometry (Parallel!) */
 .euclid-spotlight-column {
   display: flex;
   flex-direction: column;
@@ -1370,10 +1793,10 @@ header.site-header {
   text-align: center;
 }
 
-.spot-part-cell.part-a .spot-val { color: #2563eb; }
-.spot-part-cell.part-b .spot-val { color: #059669; }
-.spot-part-cell.part-q .spot-val { color: #7c3aed; }
-.spot-part-cell.part-r .spot-val { color: #ea580c; }
+.spot-part-cell.part-a .part-val { color: #2563eb; }
+.spot-part-cell.part-b .part-val { color: #059669; }
+.spot-part-cell.part-q .part-val { color: #7c3aed; }
+.spot-part-cell.part-r .part-val { color: #ea580c; }
 
 .part-name {
   font-size: 0.75rem;
@@ -1399,7 +1822,6 @@ header.site-header {
   line-height: 1.55;
 }
 
-/* Tiling Card */
 .spotlight-tiling-card {
   background: #ffffff;
   border: 1px solid var(--border-light);
@@ -1580,12 +2002,18 @@ footer.site-footer {
    ========================================================================== */
 @media (max-width: 1200px) {
   .grid-split-layout {
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .grid-split-layout {
     grid-template-columns: 1fr;
   }
 
   .grid-side-dock {
     position: static;
-    max-height: none;
   }
 
   .euclid-parallel-layout {
@@ -1603,7 +2031,7 @@ footer.site-footer {
     gap: 16px;
   }
 
-  .operator-sign {
+  .op-arrow {
     transform: rotate(90deg);
   }
 
@@ -1613,6 +2041,10 @@ footer.site-footer {
 
   .spotlight-parts-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .anim-stage-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1627,8 +2059,8 @@ footer.site-footer {
   }
 
   .ring-svg {
-    width: 56px;
-    height: 56px;
+    width: 54px;
+    height: 54px;
   }
 
   .hero-title {

@@ -1,18 +1,19 @@
 /**
  * Main Application Logic for Prime Factor Rings Visualizer (Enhanced)
- * Manages UI rendering, SVG generation, always-visible sticky side dock,
+ * Manages UI rendering, SVG generation, permanently visible factorization dock & HUD,
+ * interactive cursor glide tooltip, animated step-by-step arc counting for GCD,
  * parallel dual-column Euclidean division algorithm, and KaTeX math typesetting.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const state = {
-    selectedA: 60,
-    selectedB: 72,
+    selectedA: 64,
+    selectedB: 100,
     activeTab: 'tab-grid',
     colorMode: 'paper', // 'paper' | 'spectrum'
     activeFilter: 'all',
-    hoveredNumber: 60,
+    hoveredNumber: 64,
     
     // Euclid Lab State
     euclidA: 2024,
@@ -20,6 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     euclidStepsData: null,
     euclidCurrentStep: 0,
     euclidAutoPlayTimer: null
+  };
+
+  // Animated Arc Counting State for GCD
+  const gcdAnimState = {
+    step: -1, // -1: Intro/Ready, 0..(primes.length-1): Individual prime steps, primes.length: Complete
+    isPlaying: false,
+    timer: null,
+    primesList: []
   };
 
   /* ==========================================================================
@@ -76,9 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return html
       .replace(/\\gcd/g, '<strong>gcd</strong>')
       .replace(/\\operatorname\{lcm\}/g, '<strong>lcm</strong>')
-      .replace(/\\min/g, 'min')
-      .replace(/\\max/g, 'max')
-      .replace(/\\nu_p/g, 'ν<sub>p</sub>')
       .replace(/\\equiv/g, '≡')
       .replace(/\\pmod\{(.*?)\}/g, '(mod $1)')
       .replace(/\\pmod\s+(\d+)/g, '(mod $1)')
@@ -235,6 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
      ========================================================================== */
   const tabBtns = document.querySelectorAll('.tab-btn');
   const tabPanels = document.querySelectorAll('.tab-content');
+  const homepageFloatingHud = document.getElementById('homepageFloatingHud');
+  const gridHoverTooltip = document.getElementById('gridHoverTooltip');
 
   function setActiveTab(targetId) {
     state.activeTab = targetId;
@@ -247,6 +255,14 @@ document.addEventListener('DOMContentLoaded', () => {
     tabPanels.forEach(panel => {
       panel.classList.toggle('active', panel.id === targetId);
     });
+
+    if (homepageFloatingHud) {
+      homepageFloatingHud.style.display = targetId === 'tab-grid' ? 'flex' : 'none';
+    }
+    if (gridHoverTooltip) {
+      gridHoverTooltip.classList.remove('visible');
+      gridHoverTooltip.style.display = 'none';
+    }
 
     if (targetId === 'tab-grid') {
       renderSideDock();
@@ -287,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     1–100 Visual Grid Controller with Mouse Hover/Drag
+     1–100 Visual Grid Controller with Mouse Hover/Drag & Cursor Tooltip
      ========================================================================== */
   const matrixContainer = document.getElementById('matrixContainer');
   const filterChips = document.querySelectorAll('#filterChips .chip-btn');
@@ -308,15 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const svg = createRingSVG(num, { size: 68 });
       node.appendChild(svg);
 
-      // Real-time hover / glide updates
-      node.addEventListener('mouseenter', () => {
-        handleNodeHover(num, node);
+      // Real-time hover / glide updates with mouse coordinates
+      node.addEventListener('mouseenter', (e) => {
+        handleNodeHover(num, node, e);
       });
 
-      node.addEventListener('mousemove', () => {
-        if (state.hoveredNumber !== num) {
-          handleNodeHover(num, node);
-        }
+      node.addEventListener('mousemove', (e) => {
+        handleNodeHover(num, node, e);
       });
 
       node.addEventListener('click', (e) => {
@@ -325,16 +339,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           setSelectedPair(num, state.selectedB);
         }
-        handleNodeHover(num, node);
+        handleNodeHover(num, node, e);
       });
 
       matrixContainer.appendChild(node);
     }
 
+    matrixContainer.addEventListener('mouseleave', () => {
+      hideCursorTooltip();
+    });
+
     applyFilter(state.activeFilter);
   }
 
-  function handleNodeHover(num, nodeElement) {
+  function handleNodeHover(num, nodeElement, e) {
     state.hoveredNumber = num;
 
     const allNodes = matrixContainer.querySelectorAll('.number-node');
@@ -342,6 +360,69 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nodeElement) nodeElement.classList.add('hover-active');
 
     updateHoverInspector(num);
+    if (e) {
+      updateCursorTooltip(num, e);
+    }
+  }
+
+  function updateCursorTooltip(num, e) {
+    if (!gridHoverTooltip) return;
+
+    const isP = MathEngine.isPrime(num);
+    let tagText = 'Composite';
+    if (num === 1) tagText = 'Unit';
+    else if (isP) tagText = 'Prime';
+
+    let formulaText = `${num} = ${MathEngine.formatFactorization(num)}`;
+    if (num === 1) formulaText = '1 (Unit)';
+    else if (isP) formulaText = `${num} (Prime)`;
+
+    const counts = MathEngine.factorCounts(num);
+    let arcsSummary = '';
+    if (num === 1) {
+      arcsSummary = 'Single grey circle (1 has no prime factors)';
+    } else {
+      const parts = [];
+      counts.forEach((power, prime) => {
+        const label = MathEngine.getPrimeLabel(prime, state.colorMode);
+        parts.push(`${power} ${label} arc${power > 1 ? 's' : ''}`);
+      });
+      arcsSummary = parts.join(', ');
+    }
+
+    gridHoverTooltip.innerHTML = `
+      <div class="tooltip-top-row">
+        <span class="tooltip-num-badge">${num}</span>
+        <span class="tooltip-type-tag">${tagText}</span>
+      </div>
+      <div class="tooltip-formula-text">${formulaText}</div>
+      <div class="tooltip-arcs-text">${arcsSummary}</div>
+      <div class="tooltip-tip-text">Click to pin A • Shift+Click pin B</div>
+    `;
+
+    const padding = 16;
+    let x = e.clientX + padding;
+    let y = e.clientY + padding;
+    const width = 240;
+    const height = 110;
+    if (x + width > window.innerWidth) {
+      x = e.clientX - width - 12;
+    }
+    if (y + height > window.innerHeight) {
+      y = e.clientY - height - 12;
+    }
+
+    gridHoverTooltip.style.left = `${Math.max(10, x)}px`;
+    gridHoverTooltip.style.top = `${Math.max(10, y)}px`;
+    gridHoverTooltip.style.display = 'block';
+    gridHoverTooltip.classList.add('visible');
+  }
+
+  function hideCursorTooltip() {
+    if (gridHoverTooltip) {
+      gridHoverTooltip.classList.remove('visible');
+      gridHoverTooltip.style.display = 'none';
+    }
   }
 
   function applyFilter(filter) {
@@ -401,15 +482,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Preset Buttons in Grid Header
-  document.getElementById('btnPair6072').addEventListener('click', () => {
-    setSelectedPair(60, 72);
-  });
-  document.getElementById('btnPair2436').addEventListener('click', () => {
-    setSelectedPair(24, 36);
-  });
-  document.getElementById('btnPair40100').addEventListener('click', () => {
-    setSelectedPair(40, 100);
-  });
+  const btn6072 = document.getElementById('btnPair6072');
+  if (btn6072) btn6072.addEventListener('click', () => setSelectedPair(60, 72));
+
+  const btn2436 = document.getElementById('btnPair2436');
+  if (btn2436) btn2436.addEventListener('click', () => setSelectedPair(24, 36));
+
+  const btn64100 = document.getElementById('btnPair64100');
+  if (btn64100) btn64100.addEventListener('click', () => setSelectedPair(64, 100));
 
   function setSelectedPair(a, b) {
     state.selectedA = a;
@@ -443,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
-     Homepage Sticky Side Dock: Compact Inspector (Always 100% visible)
+     Homepage Inspector & Fixed Bottom HUD Updates
      ========================================================================== */
   const dockRingWrapper = document.getElementById('dockRingWrapper');
   const dockNumberTitle = document.getElementById('dockNumberTitle');
@@ -463,57 +543,112 @@ document.addEventListener('DOMContentLoaded', () => {
   const dockLcmRing = document.getElementById('dockLcmRing');
 
   function updateHoverInspector(num) {
-    if (!dockRingWrapper) return;
+    // 1. Update Sticky Side Dock
+    if (dockRingWrapper) {
+      dockRingWrapper.innerHTML = '';
+      const ringSvg = createRingSVG(num, { size: 76, outerRadius: 34, innerRadius: 23, badgeRadius: 20 });
+      dockRingWrapper.appendChild(ringSvg);
+    }
 
-    dockRingWrapper.innerHTML = '';
-    // Compact 76px SVG ring for clean vertical fit
-    const ringSvg = createRingSVG(num, { size: 76, outerRadius: 34, innerRadius: 23, badgeRadius: 20 });
-    dockRingWrapper.appendChild(ringSvg);
-
-    dockNumberTitle.textContent = num;
+    if (dockNumberTitle) dockNumberTitle.textContent = num;
     const isP = MathEngine.isPrime(num);
 
+    let formulaLatex = '';
+    let tagClass = 'inspector-tag tag-composite';
+    let tagLabel = 'Composite';
+
     if (num === 1) {
-      dockTypeTag.className = 'inspector-tag tag-unit';
-      dockTypeTag.textContent = 'Unit 1';
-      dockFormula.innerHTML = `\\(1\\) (Unit element)`;
+      tagClass = 'inspector-tag tag-unit';
+      tagLabel = 'Unit 1';
+      formulaLatex = `\\(1\\) (Unit element)`;
     } else if (isP) {
-      dockTypeTag.className = 'inspector-tag tag-prime';
-      dockTypeTag.textContent = 'Prime';
-      dockFormula.innerHTML = `\\(${num}\\) (Prime)`;
+      tagClass = 'inspector-tag tag-prime';
+      tagLabel = 'Prime';
+      formulaLatex = `\\(${num}\\) (Prime)`;
     } else {
-      dockTypeTag.className = 'inspector-tag tag-composite';
-      dockTypeTag.textContent = 'Composite';
-      dockFormula.innerHTML = `\\(${num} = ${MathEngine.formatFactorization(num)}\\)`;
+      formulaLatex = `\\(${num} = ${MathEngine.formatFactorization(num)}\\)`;
     }
 
-    // Render Compact Chips for factors
-    dockArcBreakdown.innerHTML = '';
-    const counts = MathEngine.factorCounts(num);
-    const totalArcs = MathEngine.factorize(num).length;
-
-    if (num === 1) {
-      dockArcBreakdown.innerHTML = `<span class="arc-chip-pill" style="border-left: 3px solid #94a3b8;">1 has no prime factors</span>`;
-    } else {
-      counts.forEach((power, prime) => {
-        const color = MathEngine.getPrimeColor(prime, state.colorMode);
-        const arcDeg = Math.round(power * (360 / totalArcs));
-
-        const chip = document.createElement('div');
-        chip.className = 'arc-chip-pill';
-        chip.style.borderLeft = `3.5px solid ${color}`;
-        chip.innerHTML = `
-          <span class="color-dot" style="background-color: ${color}; width: 10px; height: 10px;"></span>
-          <span><strong>${prime}</strong>: ${power} arc${power > 1 ? 's' : ''} (${arcDeg}°)</span>
-        `;
-        dockArcBreakdown.appendChild(chip);
-      });
+    if (dockTypeTag) {
+      dockTypeTag.className = tagClass;
+      dockTypeTag.textContent = tagLabel;
+    }
+    if (dockFormula) {
+      dockFormula.innerHTML = formulaLatex;
+      renderLatexInDOM(dockFormula);
     }
 
-    dockPinA.textContent = `📌 Pin ${num} as A`;
-    dockPinB.textContent = `📌 Pin ${num} as B`;
+    if (dockArcBreakdown) {
+      dockArcBreakdown.innerHTML = '';
+      const counts = MathEngine.factorCounts(num);
+      const totalArcs = MathEngine.factorize(num).length;
 
-    renderLatexInDOM(dockFormula);
+      if (num === 1) {
+        dockArcBreakdown.innerHTML = `<span class="arc-chip-pill" style="border-left: 3px solid #94a3b8;">1 has no prime factors</span>`;
+      } else {
+        counts.forEach((power, prime) => {
+          const color = MathEngine.getPrimeColor(prime, state.colorMode);
+          const arcDeg = Math.round(power * (360 / totalArcs));
+
+          const chip = document.createElement('div');
+          chip.className = 'arc-chip-pill';
+          chip.style.borderLeft = `3.5px solid ${color}`;
+          chip.innerHTML = `
+            <span class="color-dot" style="background-color: ${color}; width: 10px; height: 10px;"></span>
+            <span><strong>${prime}</strong>: ${power} arc${power > 1 ? 's' : ''} (${arcDeg}°)</span>
+          `;
+          dockArcBreakdown.appendChild(chip);
+        });
+      }
+    }
+
+    if (dockPinA) dockPinA.textContent = `📌 Pin ${num} as A`;
+    if (dockPinB) dockPinB.textContent = `📌 Pin ${num} as B`;
+
+    // 2. Update Bottom Floating HUD (Always in viewport when scrolling)
+    const hudRingWrapper = document.getElementById('hudRingWrapper');
+    const hudNumber = document.getElementById('hudNumber');
+    const hudTag = document.getElementById('hudTag');
+    const hudFormula = document.getElementById('hudFormula');
+    const hudArcs = document.getElementById('hudArcs');
+    const hudPinA = document.getElementById('hudPinA');
+    const hudPinB = document.getElementById('hudPinB');
+
+    if (hudRingWrapper) {
+      hudRingWrapper.innerHTML = '';
+      const hudSvg = createRingSVG(num, { size: 44, outerRadius: 20, innerRadius: 13, badgeRadius: 11 });
+      hudRingWrapper.appendChild(hudSvg);
+    }
+    if (hudNumber) hudNumber.textContent = num;
+    if (hudTag) {
+      hudTag.className = `hud-tag ${num === 1 ? 'tag-unit' : isP ? 'tag-prime' : 'tag-composite'}`;
+      hudTag.textContent = tagLabel;
+    }
+    if (hudFormula) {
+      hudFormula.innerHTML = formulaLatex;
+      renderLatexInDOM(hudFormula);
+    }
+    if (hudArcs) {
+      if (num === 1) {
+        hudArcs.textContent = 'Single grey circle (Unit element)';
+      } else {
+        const counts = MathEngine.factorCounts(num);
+        const parts = [];
+        counts.forEach((power, prime) => {
+          const label = MathEngine.getPrimeLabel(prime, state.colorMode);
+          parts.push(`${power} ${label}`);
+        });
+        hudArcs.textContent = parts.join(' • ');
+      }
+    }
+    if (hudPinA) {
+      hudPinA.textContent = `📌 Pin A (${num})`;
+      hudPinA.onclick = () => setSelectedPair(num, state.selectedB);
+    }
+    if (hudPinB) {
+      hudPinB.textContent = `📌 Pin B (${num})`;
+      hudPinB.onclick = () => setSelectedPair(state.selectedA, num);
+    }
   }
 
   dockPinA.addEventListener('click', () => {
@@ -525,19 +660,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function renderSideDock() {
-    const a = parseInt(dockInputA.value, 10) || state.selectedA || 60;
-    const b = parseInt(dockInputB.value, 10) || state.selectedB || 72;
+    const a = parseInt(dockInputA.value, 10) || state.selectedA || 64;
+    const b = parseInt(dockInputB.value, 10) || state.selectedB || 100;
 
     const gcdAnalysis = MathEngine.getGCDAnalysis(a, b, state.colorMode);
     const lcmAnalysis = MathEngine.getLCMAnalysis(a, b, state.colorMode);
 
     dockGcdFormula.innerHTML = `\\(\\gcd(${a}, ${b}) = ${gcdAnalysis.formula} = \\mathbf{${gcdAnalysis.gcd}}\\)`;
-    dockGcdRule.textContent = `Takes min arcs: ${gcdAnalysis.totalMinArcs} arc${gcdAnalysis.totalMinArcs !== 1 ? 's' : ''}`;
+    dockGcdRule.textContent = `Smaller count: ${gcdAnalysis.totalMinArcs} shared arc${gcdAnalysis.totalMinArcs !== 1 ? 's' : ''}`;
     dockGcdRing.innerHTML = '';
     dockGcdRing.appendChild(createRingSVG(gcdAnalysis.gcd, { size: 50, outerRadius: 22, innerRadius: 15, badgeRadius: 13 }));
 
     dockLcmFormula.innerHTML = `\\(\\operatorname{lcm}(${a}, ${b}) = ${lcmAnalysis.formula} = \\mathbf{${lcmAnalysis.lcm.toLocaleString()}}\\)`;
-    dockLcmRule.textContent = `Takes max arcs: ${lcmAnalysis.totalMaxArcs} arc${lcmAnalysis.totalMaxArcs !== 1 ? 's' : ''}`;
+    dockLcmRule.textContent = `Largest count: ${lcmAnalysis.totalMaxArcs} combined arc${lcmAnalysis.totalMaxArcs !== 1 ? 's' : ''}`;
     dockLcmRing.innerHTML = '';
     dockLcmRing.appendChild(createRingSVG(lcmAnalysis.lcm, { size: 50, outerRadius: 22, innerRadius: 15, badgeRadius: 13 }));
 
@@ -568,15 +703,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     GCD Studio Controller (Minimum Arcs Rule)
+     GCD Studio Controller & ANIMATED STEP-BY-STEP ARC COUNTING
      ========================================================================== */
   const gcdInputA = document.getElementById('gcdInputA');
   const gcdInputB = document.getElementById('gcdInputB');
   const gcdCalculateBtn = document.getElementById('gcdCalculateBtn');
 
+  const btnGcdAnimPrev = document.getElementById('btnGcdAnimPrev');
+  const btnGcdAnimPlay = document.getElementById('btnGcdAnimPlay');
+  const btnGcdAnimNext = document.getElementById('btnGcdAnimNext');
+  const btnGcdAnimReset = document.getElementById('btnGcdAnimReset');
+
   function renderGCDStudio() {
-    const a = parseInt(gcdInputA.value, 10) || 60;
-    const b = parseInt(gcdInputB.value, 10) || 72;
+    const a = parseInt(gcdInputA.value, 10) || 64;
+    const b = parseInt(gcdInputB.value, 10) || 100;
     state.selectedA = a;
     state.selectedB = b;
 
@@ -603,6 +743,32 @@ document.addEventListener('DOMContentLoaded', () => {
     ringRes.innerHTML = '';
     ringRes.appendChild(createRingSVG(analysis.gcd, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
+    // Prepare Animation Primes List across Number A and Number B
+    const countsA = MathEngine.factorCounts(a);
+    const countsB = MathEngine.factorCounts(b);
+    const primeSet = new Set([...countsA.keys(), ...countsB.keys()]);
+    const sortedPrimes = Array.from(primeSet).sort((x, y) => x - y);
+
+    gcdAnimState.primesList = sortedPrimes.map(p => {
+      const countA = countsA.get(p) || 0;
+      const countB = countsB.get(p) || 0;
+      const minCount = Math.min(countA, countB);
+      return {
+        prime: p,
+        label: MathEngine.getPrimeLabel(p, state.colorMode),
+        color: MathEngine.getPrimeColor(p, state.colorMode),
+        countA,
+        countB,
+        minCount,
+        shared: minCount > 0
+      };
+    });
+
+    stopGCDAnim();
+    gcdAnimState.step = -1;
+    renderGCDAnimView();
+
+    // Summary Table with crystal-clear student-friendly language
     const tbody = document.getElementById('gcdTableBody');
     tbody.innerHTML = '';
 
@@ -647,19 +813,235 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           <span class="rule-highlight-box ${row.included ? 'highlight-win' : ''}">
-            min(${row.countA}, ${row.countB}) = <strong>${row.minCount}</strong> arc${row.minCount !== 1 ? 's' : ''}
+            Smaller count: <strong>${row.minCount}</strong> arc${row.minCount !== 1 ? 's' : ''}
           </span>
         </td>
         <td>
           ${row.included 
             ? `<div class="arc-dots-container">${tokensMin} <span style="font-weight: 800; margin-left: 8px;">${row.prime}<sup>${row.minCount}</sup></span></div>`
-            : '<span style="color: var(--text-light);">Excluded (power 0)</span>'}
+            : '<span style="color: var(--text-light);">Excluded (0 shared)</span>'}
         </td>
       `;
       tbody.appendChild(tr);
     });
 
     renderLatexInDOM(document.getElementById('tab-gcd'));
+  }
+
+  function renderGCDAnimView() {
+    const { step, primesList, isPlaying } = gcdAnimState;
+    const a = state.selectedA;
+    const b = state.selectedB;
+    const totalSteps = primesList.length;
+
+    const narrative = document.getElementById('gcdAnimNarrative');
+    const compCircle = document.getElementById('compCircle');
+    const compRuleText = document.getElementById('compRuleText');
+    const animLabelA = document.getElementById('animLabelA');
+    const animLabelB = document.getElementById('animLabelB');
+    const animCountA = document.getElementById('animCountA');
+    const animCountB = document.getElementById('animCountB');
+    const rackA = document.getElementById('animRackA');
+    const rackB = document.getElementById('animRackB');
+    const collectorRack = document.getElementById('animCollectorRack');
+    const collectorFormula = document.getElementById('animCollectorFormula');
+
+    // Button states
+    if (btnGcdAnimPrev) btnGcdAnimPrev.disabled = (step <= -1);
+    if (btnGcdAnimNext) btnGcdAnimNext.disabled = (step >= totalSteps);
+    if (btnGcdAnimPlay) {
+      btnGcdAnimPlay.textContent = isPlaying 
+        ? '⏸ Pause' 
+        : (step >= totalSteps ? '↺ Replay Arc Counting' : '▶ Play Arc Counting');
+    }
+
+    if (animLabelA) animLabelA.textContent = `Number A (${a})`;
+    if (animLabelB) animLabelB.textContent = `Number B (${b})`;
+
+    const factorsA = MathEngine.factorize(a);
+    const factorsB = MathEngine.factorize(b);
+    if (animCountA) animCountA.textContent = `${factorsA.length} arc${factorsA.length !== 1 ? 's' : ''} total`;
+    if (animCountB) animCountB.textContent = `${factorsB.length} arc${factorsB.length !== 1 ? 's' : ''} total`;
+
+    // Active prime object if currently in prime step
+    const activePrimeObj = (step >= 0 && step < totalSteps) ? primesList[step] : null;
+
+    // Render Rack A tokens
+    if (rackA) {
+      rackA.innerHTML = '';
+      factorsA.forEach(p => {
+        const token = document.createElement('span');
+        token.className = 'token-coin';
+        token.style.backgroundColor = MathEngine.getPrimeColor(p, state.colorMode);
+        token.textContent = p;
+        token.title = `Factor ${p}`;
+
+        if (activePrimeObj) {
+          if (p === activePrimeObj.prime) {
+            token.classList.add('active-inspect');
+          } else {
+            token.classList.add('dimmed');
+          }
+        }
+        rackA.appendChild(token);
+      });
+    }
+
+    // Render Rack B tokens
+    if (rackB) {
+      rackB.innerHTML = '';
+      factorsB.forEach(p => {
+        const token = document.createElement('span');
+        token.className = 'token-coin';
+        token.style.backgroundColor = MathEngine.getPrimeColor(p, state.colorMode);
+        token.textContent = p;
+        token.title = `Factor ${p}`;
+
+        if (activePrimeObj) {
+          if (p === activePrimeObj.prime) {
+            token.classList.add('active-inspect');
+          } else {
+            token.classList.add('dimmed');
+          }
+        }
+        rackB.appendChild(token);
+      });
+    }
+
+    // State -1: Initial Overview
+    if (step === -1) {
+      if (compCircle) compCircle.textContent = 'VS';
+      if (compRuleText) compRuleText.textContent = 'Comparing counts';
+      if (narrative) {
+        narrative.innerHTML = `👋 Click <strong>'Play Arc Counting'</strong> or <strong>'Next Color'</strong> to inspect and count common prime arcs color by color!`;
+      }
+      if (collectorRack) {
+        collectorRack.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No shared arcs collected yet</span>`;
+      }
+      if (collectorFormula) collectorFormula.textContent = 'Shared arcs: none yet';
+      return;
+    }
+
+    // Active Comparison Step (0 .. totalSteps - 1)
+    if (step >= 0 && step < totalSteps) {
+      const cur = activePrimeObj;
+      if (compCircle) compCircle.textContent = `${cur.countA} vs ${cur.countB}`;
+      if (compRuleText) {
+        compRuleText.textContent = cur.minCount > 0 ? `Smaller count: ${cur.minCount}` : `No shared arcs`;
+      }
+
+      if (narrative) {
+        if (cur.minCount > 0) {
+          narrative.innerHTML = `Color ${step + 1} of ${totalSteps} — <strong style="color: ${cur.color};">${cur.label}:</strong> Number A has <strong>${cur.countA}</strong> arc(s), Number B has <strong>${cur.countB}</strong> arc(s). Both share <strong style="color: #047857;">${cur.minCount} common arc${cur.minCount > 1 ? 's' : ''}</strong>! Collecting ${cur.minCount} arc${cur.minCount > 1 ? 's' : ''} into the GCD basket.`;
+        } else {
+          narrative.innerHTML = `Color ${step + 1} of ${totalSteps} — <strong style="color: ${cur.color};">${cur.label}:</strong> Number A has ${cur.countA} arc(s), Number B has ${cur.countB} arc(s). There are no shared arcs for this color (${cur.minCount} = 0). None collected for GCD.`;
+        }
+      }
+    }
+
+    // Final Completion Step (step === totalSteps)
+    if (step === totalSteps) {
+      const analysis = MathEngine.getGCDAnalysis(a, b, state.colorMode);
+      if (compCircle) compCircle.textContent = `🎉 ${analysis.gcd}`;
+      if (compRuleText) compRuleText.textContent = 'All shared arcs found';
+      if (narrative) {
+        narrative.innerHTML = `🎉 <strong>Arc Counting Complete!</strong> All prime colors have been examined. Multiplying all shared arcs collected in the basket gives the Greatest Common Divisor: <strong>${analysis.formula} = ${analysis.gcd}</strong>!`;
+      }
+    }
+
+    // Render Collector Shelf
+    if (collectorRack) {
+      collectorRack.innerHTML = '';
+      const collectedTokens = [];
+      const limit = Math.min(step, totalSteps - 1);
+
+      for (let i = 0; i <= limit; i++) {
+        const item = primesList[i];
+        for (let k = 0; k < item.minCount; k++) {
+          collectedTokens.push(item);
+        }
+      }
+
+      if (collectedTokens.length === 0) {
+        collectorRack.innerHTML = `<span style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No shared arcs collected yet</span>`;
+        if (collectorFormula) collectorFormula.textContent = 'Shared arcs: none yet';
+      } else {
+        collectedTokens.forEach(item => {
+          const token = document.createElement('span');
+          token.className = 'token-coin';
+          token.style.backgroundColor = item.color;
+          token.textContent = item.prime;
+          token.title = `Shared factor ${item.prime}`;
+          collectorRack.appendChild(token);
+        });
+
+        const factorsProduct = collectedTokens.map(t => t.prime).join(' × ');
+        const totalVal = collectedTokens.reduce((acc, t) => acc * t.prime, 1);
+        if (collectorFormula) {
+          collectorFormula.innerHTML = `Shared arcs: <strong>${factorsProduct} = ${totalVal}</strong>`;
+        }
+      }
+    }
+  }
+
+  function stopGCDAnim() {
+    if (gcdAnimState.timer) {
+      clearInterval(gcdAnimState.timer);
+      gcdAnimState.timer = null;
+    }
+    gcdAnimState.isPlaying = false;
+  }
+
+  if (btnGcdAnimPlay) {
+    btnGcdAnimPlay.addEventListener('click', () => {
+      if (gcdAnimState.isPlaying) {
+        stopGCDAnim();
+        renderGCDAnimView();
+      } else {
+        if (gcdAnimState.step >= gcdAnimState.primesList.length) {
+          gcdAnimState.step = -1;
+        }
+        gcdAnimState.isPlaying = true;
+        renderGCDAnimView();
+        gcdAnimState.timer = setInterval(() => {
+          if (gcdAnimState.step < gcdAnimState.primesList.length) {
+            gcdAnimState.step++;
+            renderGCDAnimView();
+          } else {
+            stopGCDAnim();
+            renderGCDAnimView();
+          }
+        }, 1800);
+      }
+    });
+  }
+
+  if (btnGcdAnimNext) {
+    btnGcdAnimNext.addEventListener('click', () => {
+      stopGCDAnim();
+      if (gcdAnimState.step < gcdAnimState.primesList.length) {
+        gcdAnimState.step++;
+        renderGCDAnimView();
+      }
+    });
+  }
+
+  if (btnGcdAnimPrev) {
+    btnGcdAnimPrev.addEventListener('click', () => {
+      stopGCDAnim();
+      if (gcdAnimState.step > -1) {
+        gcdAnimState.step--;
+        renderGCDAnimView();
+      }
+    });
+  }
+
+  if (btnGcdAnimReset) {
+    btnGcdAnimReset.addEventListener('click', () => {
+      stopGCDAnim();
+      gcdAnimState.step = 0;
+      renderGCDAnimView();
+    });
   }
 
   gcdCalculateBtn.addEventListener('click', renderGCDStudio);
@@ -675,15 +1057,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     LCM Studio Controller (Maximum Arcs Rule)
+     LCM Studio Controller (Combine Highest Arcs Rule)
      ========================================================================== */
   const lcmInputA = document.getElementById('lcmInputA');
   const lcmInputB = document.getElementById('lcmInputB');
   const lcmCalculateBtn = document.getElementById('lcmCalculateBtn');
 
   function renderLCMStudio() {
-    const a = parseInt(lcmInputA.value, 10) || 60;
-    const b = parseInt(lcmInputB.value, 10) || 72;
+    const a = parseInt(lcmInputA.value, 10) || 64;
+    const b = parseInt(lcmInputB.value, 10) || 100;
 
     const analysis = MathEngine.getLCMAnalysis(a, b, state.colorMode);
 
@@ -752,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           <span class="rule-highlight-box ${row.included ? 'highlight-win-lcm' : ''}">
-            max(${row.countA}, ${row.countB}) = <strong>${row.maxCount}</strong> arc${row.maxCount !== 1 ? 's' : ''}
+            Largest count: <strong>${row.maxCount}</strong> arc${row.maxCount !== 1 ? 's' : ''}
           </span>
         </td>
         <td>
@@ -792,7 +1174,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const euclidStepsCounter = document.getElementById('euclidStepsCounter');
   const euclidLadderContainer = document.getElementById('euclidLadderContainer');
-  const euclidGrandResultCard = document.getElementById('euclidGrandResultCard');
   const grandResultFormula = document.getElementById('grandResultFormula');
   const grandResultDesc = document.getElementById('grandResultDesc');
 
@@ -835,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (idx === currentIdx) card.classList.add('active-step');
       if (idx === total - 1) card.classList.add('final-solved-step');
 
-      // Click any step directly to jump!
+      // Click any step directly to jump
       card.addEventListener('click', () => {
         state.euclidCurrentStep = idx;
         renderEuclidParallelDashboard();
@@ -855,14 +1236,14 @@ document.addEventListener('DOMContentLoaded', () => {
       euclidLadderContainer.appendChild(card);
     });
 
-    // Grand Result Box at the base of the left column
+    // Grand Result Box at base of left column
     grandResultFormula.innerHTML = `\\(\\gcd(${data.a}, ${data.b}) = \\mathbf{${data.gcd}}\\)`;
     grandResultDesc.innerHTML = `
       The last non-zero remainder was <strong>${data.gcd}</strong>.<br>
       Solved in <strong>${total}</strong> division steps without testing any prime factors!
     `;
 
-    // 2. Update Right Column: Spotlight Focus & Arithmetic Metrics
+    // 2. Update Right Column: Spotlight Focus & Metrics
     spotlightStepPill.textContent = `Step ${currentIdx + 1} of ${total} Spotlight`;
     spotlightActionText.textContent = isFinal ? `Final Step: Remainder Reaches 0` : `Dividing ${step.a} by ${step.b}`;
     spotlightEquationBox.innerHTML = `\\(${step.a} = ${step.b} \\times ${step.q} + ${step.r}\\)`;
@@ -888,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     barStepNum.textContent = currentIdx + 1;
     renderBarTiling(step);
 
-    // Button States
+    // Stepper Button States
     btnEuclidPrev.disabled = currentIdx === 0;
     btnEuclidNext.disabled = isFinal;
 
@@ -1106,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', () => {
      Initial App Boot
      ========================================================================== */
   renderGrid100();
-  updateHoverInspector(60);
+  updateHoverInspector(64);
   renderSideDock();
   renderGCDStudio();
   renderLCMStudio();
