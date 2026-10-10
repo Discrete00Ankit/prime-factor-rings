@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prime Factor Rings — Visual GCD, LCM & Euclidean Explorer</title>
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for Beautiful Mathematical Typesetting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
 
@@ -29,24 +36,24 @@
         </svg>
         <div class="logo-text">
           <h1>Prime Factor Rings</h1>
-          <p>Visual Number Theory & Arithmetic Explorer</p>
+          <p>Visual Number Theory, GCD, LCM & Euclidean Division Explorer</p>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs" role="tablist">
-        <button class="tab-btn active" data-tab="tab-grid" role="tab">🔢 1–100 Grid</button>
+        <button class="tab-btn active" data-tab="tab-grid" role="tab">🔢 1–100 Grid & Live Hub</button>
         <button class="tab-btn" data-tab="tab-gcd" role="tab">🟢 GCD Studio</button>
         <button class="tab-btn" data-tab="tab-lcm" role="tab">🟣 LCM Studio</button>
         <button class="tab-btn" data-tab="tab-euclid" role="tab">⚖️ Euclid's Lab</button>
-        <button class="tab-btn" data-tab="tab-challenge" role="tab">📝 Worksheet Challenge</button>
+        <button class="tab-btn" data-tab="tab-challenge" role="tab">📝 Exam Challenge</button>
         <button class="tab-btn" data-tab="tab-theory" role="tab">📖 Math Guide</button>
       </nav>
 
       <!-- Header Selection & Color Mode -->
       <div class="header-actions">
         <div class="selection-badge" title="Selected numbers for GCD and LCM comparison">
-          <span>Pair:</span>
+          <span>Active Pair:</span>
           <span class="badge-tag tag-a" id="headerTagA">A: 60</span>
           <span class="badge-tag tag-b" id="headerTagB">B: 72</span>
         </div>
@@ -63,12 +70,12 @@
   <section class="hero-banner">
     <div class="container">
       <div class="hero-pill">
-        ✨ Visualizing Fundamental Theorem of Arithmetic
+        ✨ Interactive Visual Mathematics Inspired by the Exam Question Paper
       </div>
       <h2 class="hero-title">Every Number Tells a Story of Primes</h2>
       <p class="hero-subtitle">
         Each integer is enclosed in a ring divided into circular arcs representing its prime factors.
-        Explore the visual geometry of <strong>GCD</strong> (minimum arcs) and <strong>LCM</strong> (maximum arcs).
+        Explore how <strong>GCD</strong> takes minimum arcs, <strong>LCM</strong> takes maximum arcs, and <strong>Euclid's Algorithm</strong> computes GCD step-by-step for large numbers.
       </p>
 
       <!-- Color Legend Bar matching question paper -->
@@ -79,25 +86,25 @@
         </div>
         <div class="legend-item" title="Green represents prime factor 2">
           <span class="color-dot" style="background-color: var(--color-p2);"></span>
-          <span>2 (Green)</span>
+          <span>2 (Emerald Green)</span>
         </div>
         <div class="legend-item" title="Purple represents prime factor 3">
           <span class="color-dot" style="background-color: var(--color-p3);"></span>
-          <span>3 (Purple)</span>
+          <span>3 (Royal Purple)</span>
         </div>
         <div class="legend-item" title="Orange represents prime factor 5">
           <span class="color-dot" style="background-color: var(--color-p5);"></span>
-          <span>5 (Orange)</span>
+          <span>5 (Warm Orange)</span>
         </div>
         <div class="legend-item" title="Blue represents prime factor 7">
           <span class="color-dot" style="background-color: var(--color-p7);"></span>
-          <span>7 (Blue)</span>
+          <span>7 (Cerulean Blue)</span>
         </div>
         <div class="legend-item" title="Primes ≥ 11 are grouped in red since no composite ≤ 100 has more than one prime ≥ 11">
           <span class="color-dot" style="background-color: var(--color-ge11);"></span>
           <span>≥ 11 (Ruby Red)</span>
         </div>
-        <span class="legend-note">* In 1–100, 11² = 121 > 100, so red arcs never repeat!</span>
+        <span class="legend-note">* In 1–100, \(11^2 = 121 > 100\), so red arcs never repeat on any single number!</span>
       </div>
     </div>
   </section>
@@ -105,45 +112,138 @@
   <main class="container">
 
     <!-- =======================================================================
-         TAB 1: 1–100 Prime Arc Visual Grid
+         TAB 1: 1–100 Visual Grid with INTEGRATED Live GCD/LCM Side Dock
          ======================================================================= -->
     <section id="tab-grid" class="tab-content active">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2>The 1 to 100 Factorization Chart</h2>
-            <p>Click on any circle to view its full prime factorization or assign it to Number A or B.</p>
-          </div>
-          <div class="quick-preset-btns">
-            <span style="font-size: 0.82rem; color: var(--text-muted); margin-right: 8px;">Try Worksheet Pair:</span>
-            <button class="chip-btn" id="btnPair6072">60 & 72</button>
-            <button class="chip-btn" id="btnPair2436">24 & 36</button>
-            <button class="chip-btn" id="btnPair40100">40 & 100</button>
+      <div class="grid-split-layout">
+
+        <!-- Left / Center Main Area: The 100 Matrix -->
+        <div class="grid-main-column">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2>The 1 to 100 Prime Factor Matrix</h2>
+                <p>Drag or move your mouse over any circle to inspect its factor arcs in real-time. Click to pin as A or B.</p>
+              </div>
+              <div class="quick-preset-btns">
+                <span style="font-size: 0.9rem; color: var(--text-muted); margin-right: 6px;">Worksheet Presets:</span>
+                <button class="chip-btn" id="btnPair6072">60 & 72</button>
+                <button class="chip-btn" id="btnPair2436">24 & 36</button>
+                <button class="chip-btn" id="btnPair40100">40 & 100</button>
+              </div>
+            </div>
+
+            <!-- Filter and Search Bar -->
+            <div class="grid-controls">
+              <div class="filter-chips" id="filterChips">
+                <button class="chip-btn active" data-filter="all">All (1–100)</button>
+                <button class="chip-btn" data-filter="prime">Only Primes</button>
+                <button class="chip-btn" data-filter="mult2">Multiples of 2</button>
+                <button class="chip-btn" data-filter="mult3">Multiples of 3</button>
+                <button class="chip-btn" data-filter="mult5">Multiples of 5</button>
+                <button class="chip-btn" data-filter="mult7">Multiples of 7</button>
+                <button class="chip-btn" data-filter="primeGe11">Primes ≥ 11</button>
+                <button class="chip-btn" data-filter="square">Square Numbers</button>
+              </div>
+              <div class="search-box">
+                <span>🔍</span>
+                <input type="number" id="gridSearchInput" placeholder="Locate (1-100)" min="1" max="100">
+              </div>
+            </div>
+
+            <!-- 10x10 Visual Matrix -->
+            <div class="grid-container-100" id="matrixContainer">
+              <!-- Dynamically populated 100 cards -->
+            </div>
           </div>
         </div>
 
-        <!-- Filter and Search Bar -->
-        <div class="grid-controls">
-          <div class="filter-chips" id="filterChips">
-            <button class="chip-btn active" data-filter="all">All (1–100)</button>
-            <button class="chip-btn" data-filter="prime">Only Primes</button>
-            <button class="chip-btn" data-filter="mult2">Multiples of 2</button>
-            <button class="chip-btn" data-filter="mult3">Multiples of 3</button>
-            <button class="chip-btn" data-filter="mult5">Multiples of 5</button>
-            <button class="chip-btn" data-filter="mult7">Multiples of 7</button>
-            <button class="chip-btn" data-filter="primeGe11">Primes ≥ 11</button>
-            <button class="chip-btn" data-filter="square">Square Numbers</button>
-          </div>
-          <div class="search-box">
-            <span>🔍</span>
-            <input type="number" id="gridSearchInput" placeholder="Find number (1-100)" min="1" max="100">
-          </div>
-        </div>
+        <!-- Right Side Dock: Live Hover Inspector + Live GCD/LCM Calculator -->
+        <aside class="grid-side-dock">
+          
+          <!-- Card 1: Live Hover Inspector -->
+          <div class="card side-dock-card hover-inspector-card">
+            <div class="dock-card-header">
+              <span class="dock-header-pill">🔍 Hover Inspector</span>
+              <span class="dock-subtext">Move mouse over any circle</span>
+            </div>
 
-        <!-- 10x10 Visual Matrix -->
-        <div class="grid-container-100" id="matrixContainer">
-          <!-- Dynamically populated 100 cards -->
-        </div>
+            <div class="inspector-body">
+              <div class="inspector-ring-wrapper" id="dockRingWrapper">
+                <!-- Live SVG Ring -->
+              </div>
+              <div class="inspector-info">
+                <div class="inspector-number-title" id="dockNumberTitle">60</div>
+                <div class="inspector-tag tag-composite" id="dockTypeTag">Composite Number</div>
+                <div class="inspector-formula" id="dockFormula">\(60 = 2^2 \times 3 \times 5\)</div>
+              </div>
+            </div>
+
+            <!-- Prime arc breakdown bars -->
+            <div class="inspector-arcs-breakdown" id="dockArcBreakdown">
+              <!-- Dynamically updated -->
+            </div>
+
+            <div class="dock-actions">
+              <button class="btn-primary-sm btn-pin-a" id="dockPinA">📌 Pin as Number A</button>
+              <button class="btn-primary-sm btn-pin-b" id="dockPinB">📌 Pin as Number B</button>
+            </div>
+          </div>
+
+          <!-- Card 2: Live Quick GCD & LCM Calculator (No navigation required!) -->
+          <div class="card side-dock-card quick-gcd-lcm-card">
+            <div class="dock-card-header">
+              <span class="dock-header-pill" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">
+                ⚡ Live GCD & LCM Solver
+              </span>
+              <span class="dock-subtext">Calculates instantly</span>
+            </div>
+
+            <!-- Inputs inside side dock -->
+            <div class="quick-inputs-row">
+              <div class="quick-input-col">
+                <label for="dockInputA" style="color: #059669;">Number A</label>
+                <input type="number" id="dockInputA" class="dock-num-input" value="60" min="1" max="100000">
+              </div>
+              <span style="font-weight: 800; color: var(--text-light); align-self: flex-end; padding-bottom: 6px;">&</span>
+              <div class="quick-input-col">
+                <label for="dockInputB" style="color: #7c3aed;">Number B</label>
+                <input type="number" id="dockInputB" class="dock-num-input" value="72" min="1" max="100000">
+              </div>
+            </div>
+
+            <!-- Quick GCD Output -->
+            <div class="quick-result-box gcd-quick-box">
+              <div class="quick-res-left">
+                <div class="quick-res-role" style="color: #047857;">🟢 GCD (Minimum Arcs)</div>
+                <div class="quick-res-formula" id="dockGcdFormula">\(\gcd(60, 72) = 2^2 \times 3 = \mathbf{12}\)</div>
+                <div class="quick-res-rule" id="dockGcdRule">Takes \(\min\) powers: \(2^2 \times 3^1\)</div>
+              </div>
+              <div class="quick-res-ring" id="dockGcdRing">
+                <!-- Mini Ring for GCD -->
+              </div>
+            </div>
+
+            <!-- Quick LCM Output -->
+            <div class="quick-result-box lcm-quick-box">
+              <div class="quick-res-left">
+                <div class="quick-res-role" style="color: #7e22ce;">🟣 LCM (Maximum Arcs)</div>
+                <div class="quick-res-formula" id="dockLcmFormula">\(\operatorname{lcm}(60, 72) = 2^3 \times 3^2 \times 5 = \mathbf{360}\)</div>
+                <div class="quick-res-rule" id="dockLcmRule">Takes \(\max\) powers: \(2^3 \times 3^2 \times 5^1\)</div>
+              </div>
+              <div class="quick-res-ring" id="dockLcmRing">
+                <!-- Mini Ring for LCM -->
+              </div>
+            </div>
+
+            <!-- Quick Jump Buttons -->
+            <div class="quick-nav-actions">
+              <button class="btn-subtle" id="dockOpenFullGCD">View Deep GCD Studio ➔</button>
+              <button class="btn-subtle" id="dockOpenFullEuclid">Test in Euclid's Lab ➔</button>
+            </div>
+          </div>
+
+        </aside>
       </div>
     </section>
 
@@ -160,15 +260,15 @@
               <label for="gcdInputA" style="color: #059669;">Number A:</label>
               <input type="number" id="gcdInputA" class="input-num" value="60" min="1" max="100000">
             </div>
-            <span style="font-weight: 800; color: var(--text-muted);">&</span>
+            <span style="font-weight: 800; color: var(--text-muted); font-size: 1.2rem;">&</span>
             <div class="input-num-wrapper">
               <label for="gcdInputB" style="color: #7c3aed;">Number B:</label>
               <input type="number" id="gcdInputB" class="input-num" value="72" min="1" max="100000">
             </div>
-            <button class="btn-primary" id="gcdCalculateBtn" style="padding: 8px 18px;">Compare</button>
+            <button class="btn-primary" id="gcdCalculateBtn">Compare & Calculate</button>
           </div>
           <div class="preset-pills">
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Worksheet Presets:</span>
+            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted);">Worksheet Presets:</span>
             <button class="preset-pill active" data-target="gcd" data-a="60" data-b="72">60 & 72</button>
             <button class="preset-pill" data-target="gcd" data-a="24" data-b="36">24 & 36</button>
             <button class="preset-pill" data-target="gcd" data-a="40" data-b="100">40 & 100</button>
@@ -183,7 +283,7 @@
             <div class="card-role-badge role-a">Number A</div>
             <div class="big-ring-wrapper" id="gcdRingA"></div>
             <div class="card-val-text" id="gcdValA">60</div>
-            <div class="card-factor-formula" id="gcdFormulaA">2² × 3 × 5</div>
+            <div class="card-factor-formula" id="gcdFormulaA">\(2^2 \times 3 \times 5\)</div>
           </div>
 
           <div class="operator-sign">∩</div>
@@ -193,7 +293,7 @@
             <div class="card-role-badge role-b">Number B</div>
             <div class="big-ring-wrapper" id="gcdRingB"></div>
             <div class="card-val-text" id="gcdValB">72</div>
-            <div class="card-factor-formula" id="gcdFormulaB">2³ × 3²</div>
+            <div class="card-factor-formula" id="gcdFormulaB">\(2^3 \times 3^2\)</div>
           </div>
 
           <div class="operator-sign">=</div>
@@ -203,7 +303,7 @@
             <div class="card-role-badge role-res-gcd">Greatest Common Divisor</div>
             <div class="big-ring-wrapper" id="gcdRingRes"></div>
             <div class="card-val-text" id="gcdValRes" style="color: #047857;">12</div>
-            <div class="card-factor-formula" id="gcdFormulaRes">2² × 3 = 12</div>
+            <div class="card-factor-formula" id="gcdFormulaRes">\(2^2 \times 3 = \mathbf{12}\)</div>
           </div>
         </div>
 
@@ -211,7 +311,7 @@
         <div class="analysis-panel">
           <div class="card-title-group">
             <h3>Visual Minimum Arcs Extraction</h3>
-            <p>For each prime factor color, GCD collects the <strong>minimum number of arcs</strong> common to both numbers.</p>
+            <p>For each prime factor color, GCD collects the <strong>minimum number of arcs</strong> common to both numbers: \(\nu_p(\gcd(A, B)) = \min(\nu_p(A), \nu_p(B))\).</p>
           </div>
 
           <table class="analysis-table" id="gcdAnalysisTable">
@@ -220,7 +320,7 @@
                 <th>Prime Color</th>
                 <th>Arcs in A</th>
                 <th>Arcs in B</th>
-                <th>Minimum Arcs Rule: min(A, B)</th>
+                <th>Minimum Arcs Rule: \(\min(A, B)\)</th>
                 <th>Included in GCD?</th>
               </tr>
             </thead>
@@ -231,7 +331,7 @@
 
           <div class="info-callout callout-green">
             <strong>Why does the Minimum Rule work?</strong><br>
-            A common divisor must divide both numbers without leaving a remainder. For 2 (green arcs), 72 has three arcs ($2^3$) while 60 only has two arcs ($2^2$). The maximum number of 2s that can divide <em>both</em> simultaneously is $\min(2, 3) = 2$. Therefore, GCD takes precisely the overlapping circles!
+            A common divisor must divide both numbers completely. For factor 2 (green arcs), 72 has three arcs (\(2^3\)) while 60 only has two arcs (\(2^2\)). The maximum number of 2s that can divide <em>both</em> simultaneously is \(\min(2, 3) = 2\). Therefore, GCD takes precisely the shared circles!
           </div>
         </div>
       </div>
@@ -250,15 +350,15 @@
               <label for="lcmInputA" style="color: #059669;">Number A:</label>
               <input type="number" id="lcmInputA" class="input-num" value="60" min="1" max="100000">
             </div>
-            <span style="font-weight: 800; color: var(--text-muted);">&</span>
+            <span style="font-weight: 800; color: var(--text-muted); font-size: 1.2rem;">&</span>
             <div class="input-num-wrapper">
               <label for="lcmInputB" style="color: #7c3aed;">Number B:</label>
               <input type="number" id="lcmInputB" class="input-num" value="72" min="1" max="100000">
             </div>
-            <button class="btn-primary" id="lcmCalculateBtn" style="padding: 8px 18px;">Compare</button>
+            <button class="btn-primary" id="lcmCalculateBtn">Compare & Calculate</button>
           </div>
           <div class="preset-pills">
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Worksheet Presets:</span>
+            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted);">Worksheet Presets:</span>
             <button class="preset-pill active" data-target="lcm" data-a="60" data-b="72">60 & 72</button>
             <button class="preset-pill" data-target="lcm" data-a="24" data-b="36">24 & 36</button>
             <button class="preset-pill" data-target="lcm" data-a="15" data-b="25">15 & 25</button>
@@ -273,7 +373,7 @@
             <div class="card-role-badge role-a">Number A</div>
             <div class="big-ring-wrapper" id="lcmRingA"></div>
             <div class="card-val-text" id="lcmValA">60</div>
-            <div class="card-factor-formula" id="lcmFormulaA">2² × 3 × 5</div>
+            <div class="card-factor-formula" id="lcmFormulaA">\(2^2 \times 3 \times 5\)</div>
           </div>
 
           <div class="operator-sign">∪</div>
@@ -283,7 +383,7 @@
             <div class="card-role-badge role-b">Number B</div>
             <div class="big-ring-wrapper" id="lcmRingB"></div>
             <div class="card-val-text" id="lcmValB">72</div>
-            <div class="card-factor-formula" id="lcmFormulaB">2³ × 3²</div>
+            <div class="card-factor-formula" id="lcmFormulaB">\(2^3 \times 3^2\)</div>
           </div>
 
           <div class="operator-sign">=</div>
@@ -293,7 +393,7 @@
             <div class="card-role-badge role-res-lcm">Least Common Multiple</div>
             <div class="big-ring-wrapper" id="lcmRingRes"></div>
             <div class="card-val-text" id="lcmValRes" style="color: #7e22ce;">360</div>
-            <div class="card-factor-formula" id="lcmFormulaRes">2³ × 3² × 5 = 360</div>
+            <div class="card-factor-formula" id="lcmFormulaRes">\(2^3 \times 3^2 \times 5 = \mathbf{360}\)</div>
           </div>
         </div>
 
@@ -301,7 +401,7 @@
         <div class="analysis-panel">
           <div class="card-title-group">
             <h3>Visual Maximum Arcs Extraction</h3>
-            <p>For each prime factor color, LCM collects the <strong>maximum number of arcs</strong> appearing in either number.</p>
+            <p>For each prime factor color, LCM collects the <strong>maximum number of arcs</strong> appearing in either number: \(\nu_p(\operatorname{lcm}(A, B)) = \max(\nu_p(A), \nu_p(B))\).</p>
           </div>
 
           <table class="analysis-table" id="lcmAnalysisTable">
@@ -310,7 +410,7 @@
                 <th>Prime Color</th>
                 <th>Arcs in A</th>
                 <th>Arcs in B</th>
-                <th>Maximum Arcs Rule: max(A, B)</th>
+                <th>Maximum Arcs Rule: \(\max(A, B)\)</th>
                 <th>Included in LCM?</th>
               </tr>
             </thead>
@@ -322,27 +422,30 @@
           <!-- Conservation Principle Card -->
           <div class="info-callout callout-purple">
             <strong>The Arc Conservation Theorem:</strong><br>
-            Notice that for every prime color: <code>min(countA, countB) + max(countA, countB) = countA + countB</code>.<br>
+            Notice that for every prime color: \(\min(\nu_p(A), \nu_p(B)) + \max(\nu_p(A), \nu_p(B)) = \nu_p(A) + \nu_p(B)\).<br>
             Hence, multiplying all prime factors gives the famous theorem:
-            <div style="font-size: 1.15rem; font-weight: 800; margin: 8px 0; font-family: var(--font-mono);">
-              gcd(A, B) × lcm(A, B) = A × B
+            <div style="font-size: 1.35rem; font-weight: 800; margin: 10px 0; font-family: var(--font-mono);">
+              \(\gcd(A, B) \times \operatorname{lcm}(A, B) = A \times B\)
             </div>
-            For 60 & 72: <code>12 × 360 = 4,320</code>, and <code>60 × 72 = 4,320</code>. Every arc in A and B is conserved!
+            For 60 & 72: \(12 \times 360 = 4,320\), and \(60 \times 72 = 4,320\). Every prime arc in A and B is conserved!
           </div>
         </div>
       </div>
     </section>
 
     <!-- =======================================================================
-         TAB 4: Euclid's Algorithm Lab
+         TAB 4: Euclid's Algorithm Lab (ENHANCED STEP-BY-STEP DISPLAY)
          ======================================================================= -->
     <section id="tab-euclid" class="tab-content">
       <div class="card">
         <div class="euclid-hero-intro">
           <h3>When Prime Arcs Become Too Hard to Count: Euclid's Division Algorithm</h3>
           <p>
-            For small numbers like 12 or 60, finding prime factors and drawing arcs is easy. But for large numbers (such as <strong>2,024</strong> and <strong>748</strong>, or cryptography-scale integers), factorizing requires searching for primes up to $\sqrt{N}$—a computationally hard problem! Euclid discovered over 2,300 years ago that you can find the GCD in logarithmic steps without factoring a single number, simply using division with remainder:
-            <strong>$\gcd(a, b) = \gcd(b, a \bmod b)$</strong>.
+            For small numbers like 12 or 60, factoring into primes and drawing arcs is simple. But for large numbers (such as <strong>2,024</strong> and <strong>748</strong>), finding prime factors requires searching for primes up to \(\sqrt{N}\)—a computationally hard problem! Counting dozens of tiny arcs around a ring becomes unwieldy.
+          </p>
+          <p style="margin-top: 8px;">
+            Euclid discovered over 2,300 years ago that you can find the GCD in logarithmic steps without factoring a single number, using repeated division with remainder:
+            <strong>\(\gcd(a, b) = \gcd(b, a \bmod b)\)</strong>.
           </p>
         </div>
 
@@ -357,15 +460,56 @@
               <label for="euclidInputB">Number B:</label>
               <input type="number" id="euclidInputB" class="input-num" value="748" min="1" max="10000000">
             </div>
-            <button class="btn-primary" id="euclidStartBtn">Solve</button>
+            <button class="btn-primary" id="euclidStartBtn">Run Division Algorithm</button>
           </div>
 
-          <!-- Stepper Buttons -->
-          <div class="stepper-btns">
-            <button class="step-btn" id="btnEuclidPrev" title="Previous division step">◀ Prev</button>
-            <button class="step-btn btn-play" id="btnEuclidPlay" title="Auto-advance through steps">▶ Auto-Play</button>
-            <button class="step-btn" id="btnEuclidNext" title="Next division step">Next ▶</button>
-            <button class="step-btn" id="btnEuclidReset" title="Reset stepper">↺ Reset</button>
+          <!-- Stepper Buttons & Mode Toggle -->
+          <div class="euclid-actions-right">
+            <div class="stepper-btns">
+              <button class="step-btn" id="btnEuclidPrev" title="Previous division step">◀ Previous</button>
+              <button class="step-btn btn-play" id="btnEuclidPlay" title="Auto-advance through steps">▶ Auto-Play</button>
+              <button class="step-btn" id="btnEuclidNext" title="Next division step">Next Step ▶</button>
+              <button class="step-btn" id="btnEuclidReset" title="Reset stepper">↺ Reset</button>
+            </div>
+            <button class="palette-toggle-btn" id="btnToggleAllSteps">📋 Show All Steps</button>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Progressive Card Showcase -->
+        <div class="euclid-current-focus-card" id="euclidFocusCard">
+          <div class="focus-card-header">
+            <div class="focus-step-pill" id="focusStepPill">Step 1 of 5</div>
+            <div class="focus-title" id="focusStepTitle">Dividing 2024 by 748</div>
+          </div>
+
+          <!-- Main Division Equation Display -->
+          <div class="focus-equation-box" id="focusEquationBox">
+            \(2024 = 748 \times 2 + 528\)
+          </div>
+
+          <!-- Component Values Breakdown -->
+          <div class="euclid-parts-grid">
+            <div class="part-cell">
+              <div class="part-label">Dividend (a)</div>
+              <div class="part-val" id="partDividend" style="color: #2563eb;">2024</div>
+            </div>
+            <div class="part-cell">
+              <div class="part-label">Divisor (b)</div>
+              <div class="part-val" id="partDivisor" style="color: #059669;">748</div>
+            </div>
+            <div class="part-cell">
+              <div class="part-label">Quotient (q)</div>
+              <div class="part-val" id="partQuotient" style="color: #7c3aed;">2</div>
+            </div>
+            <div class="part-cell">
+              <div class="part-label">Remainder (r)</div>
+              <div class="part-val" id="partRemainder" style="color: #ea580c;">528</div>
+            </div>
+          </div>
+
+          <!-- Explanatory Narrative -->
+          <div class="focus-explanation" id="focusExplanation">
+            Divide 2024 by 748: 748 fits 2 full times (\(748 \times 2 = 1496\)), leaving a remainder of 528. Since remainder \(\neq 0\), the GCD of \((2024, 748)\) is identical to \(\gcd(748, 528)\).
           </div>
         </div>
 
@@ -373,7 +517,7 @@
         <div class="euclid-visual-panel">
           <div class="card-title-group">
             <h3>Geometric Segment Tiling (Step <span id="euclidCurrentStepNum">1</span> of <span id="euclidTotalStepsNum">5</span>)</h3>
-            <p>Watch how the smaller number repeatedly tiles into the larger number until a remainder remains.</p>
+            <p>Visualizing how the divisor repeated block fits into the dividend bar, leaving the highlighted remainder block.</p>
           </div>
 
           <div class="bar-stage" id="euclidBarStage">
@@ -381,15 +525,26 @@
           </div>
         </div>
 
-        <!-- Step List & Equations -->
+        <!-- Full Step-by-Step Table / Progression List -->
         <div class="analysis-panel">
           <div class="card-title-group" style="margin-bottom: 14px;">
-            <h3>Step-by-Step Division Equations</h3>
-            <p>Each step computes $a = b \times q + r$. The last non-zero remainder is the GCD.</p>
+            <h3>Step-by-Step Division History & Table</h3>
+            <p>Each step computes \(a = b \times q + r\). When the remainder reaches 0, the last non-zero remainder is the GCD!</p>
           </div>
 
           <div class="euclid-steps-list" id="euclidStepsList">
             <!-- Dynamically populated list of equations -->
+          </div>
+
+          <!-- Final Grand Conclusion Banner -->
+          <div class="euclid-grand-result" id="euclidGrandResult" style="display: none;">
+            <div class="grand-result-badge">🎉 Solution Reached</div>
+            <div class="grand-result-formula" id="grandResultFormula">
+              \(\gcd(2024, 748) = \mathbf{44}\)
+            </div>
+            <p class="grand-result-desc" id="grandResultDesc">
+              Found in just 5 division steps without needing to factor 2024 (\(2^3 \times 11 \times 23\)) or 748 (\(2^2 \times 11 \times 17\))!
+            </p>
           </div>
         </div>
       </div>
@@ -401,48 +556,52 @@
     <section id="tab-challenge" class="tab-content">
       <div class="challenge-card">
         <div class="challenge-header">
-          <h2>📝 The Exam Question Challenge: Remainder of L²⁰²⁶ ÷ 7</h2>
-          <p style="color: var(--text-muted); margin-top: 4px;">
-            Part (iv) from your question paper: <em>"Let L = lcm(60, 72) = 360. Find the least non-negative remainder when L²⁰²⁶ is divided by 7."</em>
+          <h2>📝 The Exam Question Challenge: Remainder of \(L^{2026} \div 7\)</h2>
+          <p style="color: var(--text-muted); margin-top: 6px; font-size: 1.05rem;">
+            Part (iv) from your question paper: <em>"Let \(L = \operatorname{lcm}(60, 72) = 360\). Find the least non-negative remainder when \(L^{2026}\) is divided by 7."</em>
           </p>
         </div>
 
         <div class="challenge-prompt-box">
           <strong>The Mathematical Problem:</strong><br>
-          We know $L = 360$. We need to compute $360^{2026} \pmod 7$. Computing a 5,000+ digit number directly is impossible by hand, so we use cyclic modular arithmetic and Fermat's Little Theorem!
+          We know \(L = 360\). We need to compute \(360^{2026} \pmod 7\). Computing a 5,000+ digit number directly is impossible by hand, so we use cyclic modular arithmetic and Fermat's Little Theorem!
         </div>
 
         <div class="mod-interactive-grid">
           <!-- Step by Step Walkthrough -->
           <div class="analysis-panel">
-            <h3 style="font-size: 1.15rem; margin-bottom: 12px; color: #0f172a;">Step-by-Step Algebraic Solution</h3>
+            <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: #0f172a;">Step-by-Step Algebraic Solution</h3>
 
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 0 8px 8px 0;">
-                <strong>Step 1: Simplify Base Modulo 7</strong><br>
-                Divide $360$ by $7$:<br>
-                <code>360 = 51 × 7 + 3 ⟹ 360 ≡ 3 (mod 7)</code>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 14px 18px; border-radius: 0 10px 10px 0;">
+                <strong style="font-size: 1.05rem;">Step 1: Simplify Base Modulo 7</strong><br>
+                Divide 360 by 7:<br>
+                <div style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; margin-top: 6px;">
+                  \(360 = 51 \times 7 + 3 \implies 360 \equiv 3 \pmod 7\)
+                </div>
               </div>
 
-              <div style="background: #f8fafc; border-left: 4px solid #9333ea; padding: 12px 16px; border-radius: 0 8px 8px 0;">
-                <strong>Step 2: Observe Powers of 3 (mod 7) Repeating Cycle</strong><br>
-                By Fermat's Little Theorem, $3^{7-1} = 3^6 \equiv 1 \pmod 7$.<br>
+              <div style="background: #f8fafc; border-left: 4px solid #9333ea; padding: 14px 18px; border-radius: 0 10px 10px 0;">
+                <strong style="font-size: 1.05rem;">Step 2: Observe Powers of 3 Modulo 7 Repeating Cycle</strong><br>
+                By Fermat's Little Theorem, \(3^{7-1} = 3^6 \equiv 1 \pmod 7\).<br>
                 The sequence of remainders repeats every <strong>6 powers</strong>!
               </div>
 
-              <div style="background: #f8fafc; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 0 8px 8px 0;">
-                <strong>Step 3: Break Down Exponent 2026 by Period 6</strong><br>
-                Divide $2026$ by the cycle length $6$:<br>
-                <code>2026 = 6 × 337 + 4 (Remainder = 4)</code>
+              <div style="background: #f8fafc; border-left: 4px solid #16a34a; padding: 14px 18px; border-radius: 0 10px 10px 0;">
+                <strong style="font-size: 1.05rem;">Step 3: Break Down Exponent 2026 by Period 6</strong><br>
+                Divide 2026 by the cycle length 6:<br>
+                <div style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; margin-top: 6px;">
+                  \(2026 = 6 \times 337 + 4 \quad (\text{Remainder} = 4)\)
+                </div>
               </div>
 
-              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px 18px; border-radius: 12px;">
-                <strong style="color: #065f46; font-size: 1.1rem;">Final Conclusion:</strong><br>
-                <div style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; margin-top: 6px; color: #047857;">
-                  360²⁰²⁶ ≡ 3²⁰²⁶ ≡ (3⁶)³³⁷ × 3⁴ ≡ 1³³⁷ × 81 ≡ 1 × 4 ≡ 4 (mod 7)
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 18px 20px; border-radius: 14px;">
+                <strong style="color: #065f46; font-size: 1.25rem;">Final Conclusion:</strong><br>
+                <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; margin-top: 8px; color: #047857;">
+                  \(360^{2026} \equiv 3^{2026} \equiv (3^6)^{337} \times 3^4 \equiv 1^{337} \times 81 \equiv 1 \times 4 \equiv \mathbf{4} \pmod 7\)
                 </div>
-                <div style="margin-top: 8px; font-weight: 600; color: #065f46;">
-                  ✅ The least non-negative remainder is 4 (matches handwritten marks on the question paper!).
+                <div style="margin-top: 10px; font-weight: 700; font-size: 1.05rem; color: #065f46;">
+                  ✅ The least non-negative remainder is 4 (matches the handwritten answer on the exam paper!).
                 </div>
               </div>
             </div>
@@ -450,8 +609,8 @@
 
           <!-- Visual Modulo 7 Wheel / Clock -->
           <div class="mod-clock-canvas-box">
-            <h4 style="font-size: 0.92rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.05em;">
-              Modular Orbit on Clock mod 7
+            <h4 style="font-size: 1.05rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.05em;">
+              Modular Orbit on Clock (mod 7)
             </h4>
             <div id="modClockContainer">
               <!-- Dynamically generated SVG clock dial -->
@@ -466,9 +625,9 @@
 
         <!-- Interactive Exponent Playground -->
         <div class="analysis-panel" style="margin-top: 24px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Try Any Base, Exponent, and Modulus</h3>
-          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px;">
-            Test the modular solver with any custom values.
+          <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Try Any Base, Exponent, and Modulus</h3>
+          <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px;">
+            Test the modular cycle solver with custom values.
           </p>
           <div class="inputs-group">
             <div class="input-num-wrapper">
@@ -485,7 +644,7 @@
             </div>
             <button class="btn-primary" id="modPlaySolveBtn">Calculate Remainder</button>
           </div>
-          <div id="modPlayOutput" style="margin-top: 14px; font-family: var(--font-mono); font-size: 1rem; font-weight: 700; color: #0f172a;"></div>
+          <div id="modPlayOutput" style="margin-top: 16px;"></div>
         </div>
       </div>
     </section>
@@ -497,57 +656,57 @@
       <div class="card">
         <div class="card-title-group" style="margin-bottom: 24px;">
           <h2>Mathematical Theory & Visual Language</h2>
-          <p>Understanding the beautiful connection between prime factors, geometry, and number theory.</p>
+          <p>Understanding the connection between prime factors, geometry, and number theory.</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
           <div class="analysis-panel">
-            <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 8px;">1. The Prime Factor Ring Representation</h3>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6;">
-              By the <strong>Fundamental Theorem of Arithmetic</strong>, every positive integer $n > 1$ can be uniquely factored into prime powers:
-              $$n = p_1^{a_1} \cdot p_2^{a_2} \cdots p_k^{a_k}$$
+            <h3 style="font-size: 1.25rem; color: #0f172a; margin-bottom: 10px;">1. The Prime Factor Ring Representation</h3>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65;">
+              By the <strong>Fundamental Theorem of Arithmetic</strong>, every positive integer \(n > 1\) can be uniquely factored into prime powers:
+              \[n = p_1^{a_1} \cdot p_2^{a_2} \cdots p_k^{a_k}\]
               In this visual system:
             </p>
-            <ul style="margin: 12px 0 12px 20px; font-size: 0.9rem; color: #475569;">
-              <li>The ring is split into $N = \sum a_i$ equal circular sectors.</li>
-              <li>Each prime $p$ is assigned a specific color hue.</li>
-              <li>The exponent $a_i$ corresponds directly to the <strong>number of arc segments</strong> of that color.</li>
+            <ul style="margin: 12px 0 12px 24px; font-size: 1.02rem; color: #475569; line-height: 1.7;">
+              <li>The ring is split into \(N = \sum a_i\) equal circular sectors.</li>
+              <li>Each prime \(p\) is assigned a specific color hue.</li>
+              <li>The exponent \(a_i\) corresponds directly to the <strong>number of arc segments</strong> of that color.</li>
               <li>Unit 1 has no prime factors and is represented as a solid neutral grey badge.</li>
             </ul>
           </div>
 
           <div class="analysis-panel">
-            <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 8px;">2. Why Are Primes ≥ 11 All Red in the 1–100 Chart?</h3>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6;">
+            <h3 style="font-size: 1.25rem; color: #0f172a; margin-bottom: 10px;">2. Why Are Primes ≥ 11 All Red in the 1–100 Chart?</h3>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65;">
               In the question paper's 10×10 grid, primes 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 are all colored <strong>Ruby Red</strong>.
             </p>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-top: 8px;">
-              <strong>The mathematical reason:</strong> The smallest composite of two primes $\ge 11$ is $11 \times 11 = 121 > 100$.
-              Therefore, within the domain $n \in [1, 100]$, <em>no number ever has more than one prime factor $\ge 11$</em>!
-              This allowed the test authors to cleverly assign a single color (Red) to all primes $\ge 11$ without ever introducing arc counting ambiguity!
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65; margin-top: 8px;">
+              <strong>The mathematical reason:</strong> The smallest composite of two primes \(\ge 11\) is \(11 \times 11 = 121 > 100\).
+              Therefore, within the domain \(n \in [1, 100]\), <em>no number ever has more than one prime factor \(\ge 11\)</em>!
+              This allowed the test authors to cleverly assign a single color (Red) to all primes \(\ge 11\) without ever introducing arc counting ambiguity!
             </p>
           </div>
 
           <div class="analysis-panel">
-            <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 8px;">3. Minimum Arcs vs. Maximum Arcs</h3>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6;">
-              When finding the Greatest Common Divisor ($\gcd$) of two numbers $A$ and $B$, we take the minimum power of each prime:
-              $$\nu_p(\gcd(A, B)) = \min(\nu_p(A), \nu_p(B))$$
+            <h3 style="font-size: 1.25rem; color: #0f172a; margin-bottom: 10px;">3. Minimum Arcs vs. Maximum Arcs</h3>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65;">
+              When finding the Greatest Common Divisor (\(\gcd\)) of two numbers \(A\) and \(B\), we take the minimum power of each prime:
+              \[\nu_p(\gcd(A, B)) = \min(\nu_p(A), \nu_p(B))\]
               Graphically, this corresponds to taking the <strong>intersection of arcs</strong>—only the circles that both numbers share.
             </p>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-top: 8px;">
-              For Least Common Multiple ($\text{lcm}$), we take the <strong>maximum power</strong>:
-              $$\nu_p(\text{lcm}(A, B)) = \max(\nu_p(A), \nu_p(B))$$
-              Graphically, this is the union of prime arcs, ensuring the result is large enough to contain all factor arcs of both numbers.
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65; margin-top: 8px;">
+              For Least Common Multiple (\(\operatorname{lcm}\)), we take the <strong>maximum power</strong>:
+              \[\nu_p(\operatorname{lcm}(A, B)) = \max(\nu_p(A), \nu_p(B))\]
+              Graphically, this is the union of prime arcs, ensuring the result contains all factor arcs of both numbers.
             </p>
           </div>
 
           <div class="analysis-panel">
-            <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 8px;">4. Euclid's Division Algorithm: $O(\log N)$ Speed</h3>
-            <p style="font-size: 0.9rem; color: #475569; line-height: 1.6;">
+            <h3 style="font-size: 1.25rem; color: #0f172a; margin-bottom: 10px;">4. Euclid's Division Algorithm: \(O(\log N)\) Speed</h3>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.65;">
               Factoring integers into primes is computationally expensive. Euclid's Algorithm bypasses factorization entirely using the division theorem:
-              $$a = b \cdot q + r \implies \gcd(a, b) = \gcd(b, r)$$
-              Because the remainder shrinks by at least a factor of 2 every two steps, the algorithm terminates in at most $5 \log_{10}(\min(a, b))$ steps (Lamé's Theorem), making it exponentially faster than factoring for large numbers!
+              \[a = b \cdot q + r \implies \gcd(a, b) = \gcd(b, r)\]
+              Because the remainder shrinks by at least a factor of 2 every two steps, the algorithm terminates in at most \(5 \log_{10}(\min(a, b))\) steps (Lamé's Theorem), making it exponentially faster than factoring for large numbers!
             </p>
           </div>
         </div>
@@ -556,37 +715,11 @@
 
   </main>
 
-  <!-- =========================================================================
-       Number Inspection Modal
-       ========================================================================= -->
-  <div class="modal-overlay" id="numberModal">
-    <div class="modal-box">
-      <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">✕</button>
-      <div class="modal-content-inner">
-        <div class="modal-ring-view" id="modalRingView"></div>
-        <div class="modal-number-title" id="modalNumberTitle">60</div>
-        <div class="modal-type-tag tag-composite" id="modalTypeTag">Composite Number</div>
-        <div class="modal-math-formula" id="modalMathFormula">2² × 3 × 5</div>
-
-        <div class="modal-arc-breakdown">
-          <h4>Visual Arcs Breakdown</h4>
-          <div id="modalArcList"></div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-primary" id="modalSetA">Set as Number A</button>
-          <button class="btn-primary" id="modalSetB" style="background: #6b21a8;">Set as Number B</button>
-          <button class="btn-secondary" id="modalGoGCD">Compare in GCD Studio</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Site Footer -->
   <footer class="site-footer">
     <div class="container">
-      <p>Prime Factor Rings Interactive Mathematics — Built with pure HTML5, CSS3, & SVG</p>
-      <p style="margin-top: 6px; font-size: 0.78rem;">Based on the Question Paper Mathematical Inquiry & Euclidean Algorithm Lab</p>
+      <p style="font-size: 0.95rem;">Prime Factor Rings Interactive Mathematics — Built with pure HTML5, CSS3, KaTeX & SVG</p>
+      <p style="margin-top: 6px; font-size: 0.85rem; color: var(--text-light);">Based on the Question Paper Mathematical Inquiry & Euclidean Algorithm Lab</p>
     </div>
   </footer>
 

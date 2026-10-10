@@ -1,6 +1,7 @@
 /**
- * Main Application Logic for Prime Factor Rings Visualizer
- * Manages UI rendering, SVG generation, interactive states, animations, and stepper.
+ * Main Application Logic for Prime Factor Rings Visualizer (Enhanced)
+ * Manages UI rendering, SVG generation, live side dock, fluid hover inspector,
+ * enhanced step-by-step Euclidean division, and KaTeX math typesetting.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,21 +12,96 @@ document.addEventListener('DOMContentLoaded', () => {
     activeTab: 'tab-grid',
     colorMode: 'paper', // 'paper' | 'spectrum'
     activeFilter: 'all',
-    modalNumber: 60,
+    hoveredNumber: 60,
     
     // Euclid Lab State
     euclidA: 2024,
     euclidB: 748,
     euclidStepsData: null,
     euclidCurrentStep: 0,
-    euclidAutoPlayTimer: null
+    euclidAutoPlayTimer: null,
+    euclidShowAll: false
   };
+
+  /* ==========================================================================
+     KaTeX / Math Renderer with Graceful Offline Fallback
+     ========================================================================== */
+  function renderLatexInDOM(targetEl = document.body) {
+    if (window.renderMathInElement) {
+      try {
+        renderMathInElement(targetEl, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false }
+          ],
+          throwOnError: false
+        });
+      } catch (err) {
+        console.warn('KaTeX render warning:', err);
+      }
+    } else {
+      // Offline fallback: transform common math expressions into styled HTML
+      renderMathFallback(targetEl);
+    }
+  }
+
+  function renderMathFallback(root = document.body) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+      const text = node.nodeValue;
+      if (!text || (!text.includes('$') && !text.includes('\\(') && !text.includes('\\['))) return;
+
+      const parent = node.parentNode;
+      if (!parent || ['SCRIPT', 'STYLE', 'TEXTAREA'].includes(parent.tagName)) return;
+
+      let replaced = text
+        .replace(/\\\[(.*?)\\\]/g, '<span class="math-disp">$1</span>')
+        .replace(/\\\((.*?)\\\)/g, '<span class="math-in">$1</span>')
+        .replace(/\$\$(.*?)\$\$/g, '<span class="math-disp">$1</span>')
+        .replace(/\$(.*?)\$/g, '<span class="math-in">$1</span>');
+
+      if (replaced !== text) {
+        replaced = cleanLatexSymbols(replaced);
+        const span = document.createElement('span');
+        span.innerHTML = replaced;
+        parent.replaceChild(span, node);
+      }
+    });
+  }
+
+  function cleanLatexSymbols(html) {
+    return html
+      .replace(/\\gcd/g, '<strong>gcd</strong>')
+      .replace(/\\operatorname\{lcm\}/g, '<strong>lcm</strong>')
+      .replace(/\\min/g, 'min')
+      .replace(/\\max/g, 'max')
+      .replace(/\\nu_p/g, 'ν<sub>p</sub>')
+      .replace(/\\equiv/g, '≡')
+      .replace(/\\pmod\{(.*?)\}/g, '(mod $1)')
+      .replace(/\\pmod\s+(\d+)/g, '(mod $1)')
+      .replace(/\\times/g, '×')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\ge/g, '≥')
+      .replace(/\\le/g, '≤')
+      .replace(/\\sqrt\{(.*?)\}/g, '√$1')
+      .replace(/\\sqrt\{(\w+)\}/g, '√$1')
+      .replace(/\^\{(\d+)\}/g, '<sup>$1</sup>')
+      .replace(/\^(\d)/g, '<sup>$1</sup>')
+      .replace(/_\{(\w+)\}/g, '<sub>$1</sub>')
+      .replace(/_(\w)/g, '<sub>$1</sub>')
+      .replace(/\\mathbf\{(.*?)\}/g, '<strong>$1</strong>');
+  }
 
   /* ==========================================================================
      SVG Prime Ring Generator
      ========================================================================== */
   function createRingSVG(num, options = {}) {
-    const size = options.size || 68;
+    const size = options.size || 72;
     const center = size / 2;
     const outerRadius = options.outerRadius || (size * 0.44);
     const innerRadius = options.innerRadius || (size * 0.30);
@@ -48,14 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
       ring1.setAttribute('fill', 'none');
       svg.appendChild(ring1);
 
-      appendCenterBadge(svg, center, badgeRadius, '1', size);
+      if (showNumber) {
+        appendCenterBadge(svg, center, badgeRadius, '1', size);
+      }
       return svg;
     }
 
     const factors = MathEngine.factorize(num);
     const k = factors.length;
 
-    // Prime numbers: Exactly 1 factor -> Full continuous ring of its color
+    // Prime numbers: Exactly 1 factor -> Full continuous ring
     if (k === 1) {
       const p = factors[0];
       const color = MathEngine.getPrimeColor(p, colorMode);
@@ -73,13 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
       ring.appendChild(title);
       
       svg.appendChild(ring);
-      appendCenterBadge(svg, center, badgeRadius, String(num), size);
+      if (showNumber) {
+        appendCenterBadge(svg, center, badgeRadius, String(num), size);
+      }
       return svg;
     }
 
     // Composite numbers: Divide ring into k circular arcs with clean white gaps
     const sliceAngle = 360 / k;
-    // Calculate gap in degrees: proportional, pleasing spacing
     const gapDeg = Math.min(6, Math.max(2.5, 20 / k));
 
     factors.forEach((p, index) => {
@@ -145,8 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
     textNode.setAttribute('font-family', 'Inter, sans-serif');
     textNode.setAttribute('font-weight', '800');
 
-    // Font size scaling based on digit count and overall SVG size
-    let fontSize = size * 0.28;
+    // Font size scaling
+    let fontSize = size * 0.32;
     if (text.length === 3) fontSize *= 0.85;
     if (text.length >= 4) fontSize *= 0.72;
     textNode.setAttribute('font-size', fontSize);
@@ -172,7 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.classList.toggle('active', panel.id === targetId);
     });
 
-    if (targetId === 'tab-gcd') {
+    if (targetId === 'tab-grid') {
+      renderSideDock();
+    } else if (targetId === 'tab-gcd') {
       renderGCDStudio();
     } else if (targetId === 'tab-lcm') {
       renderLCMStudio();
@@ -181,6 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (targetId === 'tab-challenge') {
       renderWorksheetChallenge();
     }
+
+    setTimeout(() => renderLatexInDOM(), 50);
   }
 
   tabBtns.forEach(btn => {
@@ -199,17 +282,16 @@ document.addEventListener('DOMContentLoaded', () => {
     state.colorMode = state.colorMode === 'paper' ? 'spectrum' : 'paper';
     paletteModeLabel.textContent = state.colorMode === 'paper' ? 'Worksheet Colors' : 'Spectrum Colors';
 
-    // Re-render active views
+    // Re-render
     renderGrid100();
+    renderSideDock();
     renderGCDStudio();
     renderLCMStudio();
-    if (document.getElementById('numberModal').classList.contains('open')) {
-      openNumberModal(state.modalNumber);
-    }
+    updateHoverInspector(state.hoveredNumber);
   });
 
   /* ==========================================================================
-     1–100 Visual Grid Controller
+     1–100 Visual Grid Controller with Real-time Mouse Hover & Drag
      ========================================================================== */
   const matrixContainer = document.getElementById('matrixContainer');
   const filterChips = document.querySelectorAll('#filterChips .chip-btn');
@@ -225,18 +307,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (num === state.selectedA) node.classList.add('selected-a');
       if (num === state.selectedB) node.classList.add('selected-b');
+      if (num === state.hoveredNumber) node.classList.add('hover-active');
 
-      const svg = createRingSVG(num, { size: 66 });
+      const svg = createRingSVG(num, { size: 70 });
       node.appendChild(svg);
 
-      node.addEventListener('click', () => {
-        openNumberModal(num);
+      // Real-time Mouse Hover / Drag interaction
+      node.addEventListener('mouseenter', () => {
+        handleNodeHover(num, node);
+      });
+
+      node.addEventListener('mousemove', () => {
+        if (state.hoveredNumber !== num) {
+          handleNodeHover(num, node);
+        }
+      });
+
+      // Click to toggle or pin as A or B
+      node.addEventListener('click', (e) => {
+        if (e.shiftKey) {
+          setSelectedPair(state.selectedA, num);
+        } else {
+          setSelectedPair(num, state.selectedB);
+        }
+        handleNodeHover(num, node);
       });
 
       matrixContainer.appendChild(node);
     }
 
     applyFilter(state.activeFilter);
+  }
+
+  function handleNodeHover(num, nodeElement) {
+    state.hoveredNumber = num;
+
+    // Update active hover highlight on cards
+    const allNodes = matrixContainer.querySelectorAll('.number-node');
+    allNodes.forEach(n => n.classList.remove('hover-active'));
+    if (nodeElement) nodeElement.classList.add('hover-active');
+
+    // Update side dock inspector
+    updateHoverInspector(num);
   }
 
   function applyFilter(filter) {
@@ -286,7 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isNaN(val)) {
         node.classList.remove('highlighted');
       } else {
-        node.classList.toggle('highlighted', n === val);
+        const match = n === val;
+        node.classList.toggle('highlighted', match);
+        if (match) {
+          handleNodeHover(n, node);
+        }
       }
     });
   });
@@ -308,100 +424,162 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('headerTagA').textContent = `A: ${a}`;
     document.getElementById('headerTagB').textContent = `B: ${b}`;
 
-    // Update inputs in GCD and LCM
-    document.getElementById('gcdInputA').value = a;
-    document.getElementById('gcdInputB').value = b;
-    document.getElementById('lcmInputA').value = a;
-    document.getElementById('lcmInputB').value = b;
+    // Update inputs across all panels
+    const dockA = document.getElementById('dockInputA');
+    const dockB = document.getElementById('dockInputB');
+    if (dockA) dockA.value = a;
+    if (dockB) dockB.value = b;
 
-    renderGrid100();
+    const gcdA = document.getElementById('gcdInputA');
+    const gcdB = document.getElementById('gcdInputB');
+    if (gcdA) gcdA.value = a;
+    if (gcdB) gcdB.value = b;
+
+    const lcmA = document.getElementById('lcmInputA');
+    const lcmB = document.getElementById('lcmInputB');
+    if (lcmA) lcmA.value = a;
+    if (lcmB) lcmB.value = b;
+
+    // Refresh nodes
+    const nodes = matrixContainer.querySelectorAll('.number-node');
+    nodes.forEach(node => {
+      const n = parseInt(node.dataset.number, 10);
+      node.classList.toggle('selected-a', n === a);
+      node.classList.toggle('selected-b', n === b);
+    });
+
+    renderSideDock();
   }
 
   /* ==========================================================================
-     Number Inspection Modal
+     Homepage Right Side Dock: Hover Inspector + Live GCD & LCM
      ========================================================================== */
-  const numberModal = document.getElementById('numberModal');
-  const modalCloseBtn = document.getElementById('modalCloseBtn');
-  const modalRingView = document.getElementById('modalRingView');
-  const modalNumberTitle = document.getElementById('modalNumberTitle');
-  const modalTypeTag = document.getElementById('modalTypeTag');
-  const modalMathFormula = document.getElementById('modalMathFormula');
-  const modalArcList = document.getElementById('modalArcList');
-  const modalSetA = document.getElementById('modalSetA');
-  const modalSetB = document.getElementById('modalSetB');
-  const modalGoGCD = document.getElementById('modalGoGCD');
+  const dockRingWrapper = document.getElementById('dockRingWrapper');
+  const dockNumberTitle = document.getElementById('dockNumberTitle');
+  const dockTypeTag = document.getElementById('dockTypeTag');
+  const dockFormula = document.getElementById('dockFormula');
+  const dockArcBreakdown = document.getElementById('dockArcBreakdown');
+  const dockPinA = document.getElementById('dockPinA');
+  const dockPinB = document.getElementById('dockPinB');
 
-  function openNumberModal(num) {
-    state.modalNumber = num;
-    modalRingView.innerHTML = '';
-    const bigSvg = createRingSVG(num, { size: 140, outerRadius: 62, innerRadius: 42, badgeRadius: 38 });
-    modalRingView.appendChild(bigSvg);
+  const dockInputA = document.getElementById('dockInputA');
+  const dockInputB = document.getElementById('dockInputB');
+  const dockGcdFormula = document.getElementById('dockGcdFormula');
+  const dockGcdRule = document.getElementById('dockGcdRule');
+  const dockGcdRing = document.getElementById('dockGcdRing');
+  const dockLcmFormula = document.getElementById('dockLcmFormula');
+  const dockLcmRule = document.getElementById('dockLcmRule');
+  const dockLcmRing = document.getElementById('dockLcmRing');
 
-    modalNumberTitle.textContent = num;
+  function updateHoverInspector(num) {
+    if (!dockRingWrapper) return;
+
+    dockRingWrapper.innerHTML = '';
+    const bigSvg = createRingSVG(num, { size: 96, outerRadius: 42, innerRadius: 28, badgeRadius: 25 });
+    dockRingWrapper.appendChild(bigSvg);
+
+    dockNumberTitle.textContent = num;
     const isP = MathEngine.isPrime(num);
 
     if (num === 1) {
-      modalTypeTag.className = 'modal-type-tag tag-unit';
-      modalTypeTag.textContent = 'Multiplicative Unit (1)';
+      dockTypeTag.className = 'inspector-tag tag-unit';
+      dockTypeTag.textContent = 'Multiplicative Unit (1)';
+      dockFormula.innerHTML = `\\(1\\) (Unit element)`;
     } else if (isP) {
-      modalTypeTag.className = 'modal-type-tag tag-prime';
-      modalTypeTag.textContent = 'Prime Number';
+      dockTypeTag.className = 'inspector-tag tag-prime';
+      dockTypeTag.textContent = 'Prime Number';
+      dockFormula.innerHTML = `\\(${num}\\) (Prime)`;
     } else {
-      modalTypeTag.className = 'modal-type-tag tag-composite';
-      modalTypeTag.textContent = 'Composite Number';
+      dockTypeTag.className = 'inspector-tag tag-composite';
+      dockTypeTag.textContent = 'Composite Number';
+      dockFormula.innerHTML = `\\(${num} = ${MathEngine.formatFactorization(num)}\\)`;
     }
 
-    modalMathFormula.textContent = `${num} = ${MathEngine.formatFactorization(num)} (${MathEngine.formatExpandedFactors(num)})`;
-
-    modalArcList.innerHTML = '';
+    // Arc list breakdown
+    dockArcBreakdown.innerHTML = '';
     const counts = MathEngine.factorCounts(num);
+    const totalArcs = MathEngine.factorize(num).length;
+
     if (num === 1) {
-      modalArcList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.88rem;">1 has no prime factors. Represented by a grey circle.</div>';
+      dockArcBreakdown.innerHTML = `<div style="font-size: 0.9rem; color: var(--text-muted);">1 has no prime factors. Represented as a neutral grey circle.</div>`;
     } else {
       counts.forEach((power, prime) => {
-        const item = document.createElement('div');
-        item.className = 'arc-item';
+        const row = document.createElement('div');
+        row.className = 'dock-arc-row';
         const color = MathEngine.getPrimeColor(prime, state.colorMode);
-        item.innerHTML = `
-          <div class="arc-item-left">
+        const arcDeg = Math.round(power * (360 / totalArcs));
+
+        row.innerHTML = `
+          <div class="dock-arc-label">
             <span class="color-dot" style="background-color: ${color};"></span>
             <span>Prime ${prime} (${MathEngine.getPrimeLabel(prime, state.colorMode)})</span>
           </div>
-          <div style="font-family: var(--font-mono); font-weight: 700;">
-            ${power} arc${power > 1 ? 's' : ''} (${power === 1 ? '360° / ' + MathEngine.factorize(num).length : (power * (360 / MathEngine.factorize(num).length)).toFixed(0) + '° total'})
+          <div class="dock-arc-val">
+            ${power} arc${power > 1 ? 's' : ''} (${arcDeg}°)
           </div>
         `;
-        modalArcList.appendChild(item);
+        dockArcBreakdown.appendChild(row);
       });
     }
 
-    numberModal.classList.add('open');
+    dockPinA.textContent = `📌 Pin ${num} as A`;
+    dockPinB.textContent = `📌 Pin ${num} as B`;
+
+    renderLatexInDOM(dockFormula);
   }
 
-  modalCloseBtn.addEventListener('click', () => {
-    numberModal.classList.remove('open');
+  dockPinA.addEventListener('click', () => {
+    setSelectedPair(state.hoveredNumber, state.selectedB);
   });
 
-  numberModal.addEventListener('click', (e) => {
-    if (e.target === numberModal) {
-      numberModal.classList.remove('open');
-    }
+  dockPinB.addEventListener('click', () => {
+    setSelectedPair(state.selectedA, state.hoveredNumber);
   });
 
-  modalSetA.addEventListener('click', () => {
-    setSelectedPair(state.modalNumber, state.selectedB);
-    numberModal.classList.remove('open');
+  // Live Quick GCD & LCM Dock calculations
+  function renderSideDock() {
+    const a = parseInt(dockInputA.value, 10) || state.selectedA || 60;
+    const b = parseInt(dockInputB.value, 10) || state.selectedB || 72;
+
+    const gcdAnalysis = MathEngine.getGCDAnalysis(a, b, state.colorMode);
+    const lcmAnalysis = MathEngine.getLCMAnalysis(a, b, state.colorMode);
+
+    // GCD Live Box
+    dockGcdFormula.innerHTML = `\\(\\gcd(${a}, ${b}) = ${gcdAnalysis.formula} = \\mathbf{${gcdAnalysis.gcd}}\\)`;
+    dockGcdRule.textContent = `Takes min arcs: ${gcdAnalysis.totalMinArcs} arc${gcdAnalysis.totalMinArcs !== 1 ? 's' : ''}`;
+    dockGcdRing.innerHTML = '';
+    dockGcdRing.appendChild(createRingSVG(gcdAnalysis.gcd, { size: 58, outerRadius: 26, innerRadius: 18, badgeRadius: 15 }));
+
+    // LCM Live Box
+    dockLcmFormula.innerHTML = `\\(\\operatorname{lcm}(${a}, ${b}) = ${lcmAnalysis.formula} = \\mathbf{${lcmAnalysis.lcm.toLocaleString()}}\\)`;
+    dockLcmRule.textContent = `Takes max arcs: ${lcmAnalysis.totalMaxArcs} arc${lcmAnalysis.totalMaxArcs !== 1 ? 's' : ''}`;
+    dockLcmRing.innerHTML = '';
+    dockLcmRing.appendChild(createRingSVG(lcmAnalysis.lcm, { size: 58, outerRadius: 26, innerRadius: 18, badgeRadius: 15 }));
+
+    renderLatexInDOM(dockGcdFormula);
+    renderLatexInDOM(dockLcmFormula);
+  }
+
+  dockInputA.addEventListener('input', () => {
+    const val = parseInt(dockInputA.value, 10);
+    if (val > 0) setSelectedPair(val, state.selectedB);
   });
 
-  modalSetB.addEventListener('click', () => {
-    setSelectedPair(state.selectedA, state.modalNumber);
-    numberModal.classList.remove('open');
+  dockInputB.addEventListener('input', () => {
+    const val = parseInt(dockInputB.value, 10);
+    if (val > 0) setSelectedPair(state.selectedA, val);
   });
 
-  modalGoGCD.addEventListener('click', () => {
-    setSelectedPair(state.modalNumber, state.selectedB);
-    numberModal.classList.remove('open');
+  document.getElementById('dockOpenFullGCD').addEventListener('click', () => {
     setActiveTab('tab-gcd');
+  });
+
+  document.getElementById('dockOpenFullEuclid').addEventListener('click', () => {
+    const euA = document.getElementById('euclidInputA');
+    const euB = document.getElementById('euclidInputB');
+    if (euA) euA.value = state.selectedA;
+    if (euB) euB.value = state.selectedB;
+    setActiveTab('tab-euclid');
   });
 
   /* ==========================================================================
@@ -421,24 +599,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render A
     document.getElementById('gcdValA').textContent = a;
-    document.getElementById('gcdFormulaA').textContent = MathEngine.formatFactorization(a);
+    const fA = document.getElementById('gcdFormulaA');
+    fA.innerHTML = `\\(${MathEngine.formatFactorization(a)}\\)`;
     const ringA = document.getElementById('gcdRingA');
     ringA.innerHTML = '';
-    ringA.appendChild(createRingSVG(a, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringA.appendChild(createRingSVG(a, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Render B
     document.getElementById('gcdValB').textContent = b;
-    document.getElementById('gcdFormulaB').textContent = MathEngine.formatFactorization(b);
+    const fB = document.getElementById('gcdFormulaB');
+    fB.innerHTML = `\\(${MathEngine.formatFactorization(b)}\\)`;
     const ringB = document.getElementById('gcdRingB');
     ringB.innerHTML = '';
-    ringB.appendChild(createRingSVG(b, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringB.appendChild(createRingSVG(b, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Render Result GCD
     document.getElementById('gcdValRes').textContent = analysis.gcd;
-    document.getElementById('gcdFormulaRes').textContent = `${analysis.formula} = ${analysis.gcd}`;
+    const fRes = document.getElementById('gcdFormulaRes');
+    fRes.innerHTML = `\\(${analysis.formula} = \\mathbf{${analysis.gcd}}\\)`;
     const ringRes = document.getElementById('gcdRingRes');
     ringRes.innerHTML = '';
-    ringRes.appendChild(createRingSVG(analysis.gcd, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringRes.appendChild(createRingSVG(analysis.gcd, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Populate Analysis Table
     const tbody = document.getElementById('gcdTableBody');
@@ -447,19 +628,19 @@ document.addEventListener('DOMContentLoaded', () => {
     analysis.breakdown.forEach(row => {
       const tr = document.createElement('tr');
 
-      // Mini tokens for A
+      // Tokens for A
       let tokensA = '';
       for (let i = 0; i < row.countA; i++) {
         tokensA += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
-      if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.85rem;">None (0)</span>';
+      if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Mini tokens for B
+      // Tokens for B
       let tokensB = '';
       for (let i = 0; i < row.countB; i++) {
         tokensB += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
-      if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.85rem;">None (0)</span>';
+      if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
       // Result tokens
       let tokensMin = '';
@@ -493,12 +674,14 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           ${row.included 
-            ? `<div class="arc-dots-container">${tokensMin} <span style="font-weight: 700; margin-left: 6px;">${row.prime}<sup>${row.minCount}</sup></span></div>`
+            ? `<div class="arc-dots-container">${tokensMin} <span style="font-weight: 800; margin-left: 8px;">${row.prime}<sup>${row.minCount}</sup></span></div>`
             : '<span style="color: var(--text-light);">Excluded (power 0)</span>'}
         </td>
       `;
       tbody.appendChild(tr);
     });
+
+    renderLatexInDOM(document.getElementById('tab-gcd'));
   }
 
   gcdCalculateBtn.addEventListener('click', renderGCDStudio);
@@ -529,24 +712,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render A
     document.getElementById('lcmValA').textContent = a;
-    document.getElementById('lcmFormulaA').textContent = MathEngine.formatFactorization(a);
+    const fA = document.getElementById('lcmFormulaA');
+    fA.innerHTML = `\\(${MathEngine.formatFactorization(a)}\\)`;
     const ringA = document.getElementById('lcmRingA');
     ringA.innerHTML = '';
-    ringA.appendChild(createRingSVG(a, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringA.appendChild(createRingSVG(a, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Render B
     document.getElementById('lcmValB').textContent = b;
-    document.getElementById('lcmFormulaB').textContent = MathEngine.formatFactorization(b);
+    const fB = document.getElementById('lcmFormulaB');
+    fB.innerHTML = `\\(${MathEngine.formatFactorization(b)}\\)`;
     const ringB = document.getElementById('lcmRingB');
     ringB.innerHTML = '';
-    ringB.appendChild(createRingSVG(b, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringB.appendChild(createRingSVG(b, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Render Result LCM
     document.getElementById('lcmValRes').textContent = analysis.lcm.toLocaleString();
-    document.getElementById('lcmFormulaRes').textContent = `${analysis.formula} = ${analysis.lcm.toLocaleString()}`;
+    const fRes = document.getElementById('lcmFormulaRes');
+    fRes.innerHTML = `\\(${analysis.formula} = \\mathbf{${analysis.lcm.toLocaleString()}}\\)`;
     const ringRes = document.getElementById('lcmRingRes');
     ringRes.innerHTML = '';
-    ringRes.appendChild(createRingSVG(analysis.lcm, { size: 110, outerRadius: 48, innerRadius: 32, badgeRadius: 28 }));
+    ringRes.appendChild(createRingSVG(analysis.lcm, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
 
     // Populate Analysis Table
     const tbody = document.getElementById('lcmTableBody');
@@ -555,19 +741,19 @@ document.addEventListener('DOMContentLoaded', () => {
     analysis.breakdown.forEach(row => {
       const tr = document.createElement('tr');
 
-      // Mini tokens for A
+      // Tokens for A
       let tokensA = '';
       for (let i = 0; i < row.countA; i++) {
         tokensA += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
-      if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.85rem;">None (0)</span>';
+      if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Mini tokens for B
+      // Tokens for B
       let tokensB = '';
       for (let i = 0; i < row.countB; i++) {
         tokensB += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
-      if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.85rem;">None (0)</span>';
+      if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
       // Result tokens
       let tokensMax = '';
@@ -601,12 +787,14 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           ${row.included 
-            ? `<div class="arc-dots-container">${tokensMax} <span style="font-weight: 700; margin-left: 6px;">${row.prime}<sup>${row.maxCount}</sup></span></div>`
+            ? `<div class="arc-dots-container">${tokensMax} <span style="font-weight: 800; margin-left: 8px;">${row.prime}<sup>${row.maxCount}</sup></span></div>`
             : '<span style="color: var(--text-light);">Excluded (0)</span>'}
         </td>
       `;
       tbody.appendChild(tr);
     });
+
+    renderLatexInDOM(document.getElementById('tab-lcm'));
   }
 
   lcmCalculateBtn.addEventListener('click', renderLCMStudio);
@@ -623,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     Euclid's Division Algorithm Lab Controller
+     Euclid's Division Algorithm Lab Controller (Enhanced Step-by-Step)
      ========================================================================== */
   const euclidInputA = document.getElementById('euclidInputA');
   const euclidInputB = document.getElementById('euclidInputB');
@@ -632,8 +820,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnEuclidNext = document.getElementById('btnEuclidNext');
   const btnEuclidPlay = document.getElementById('btnEuclidPlay');
   const btnEuclidReset = document.getElementById('btnEuclidReset');
+  const btnToggleAllSteps = document.getElementById('btnToggleAllSteps');
+
+  const focusStepPill = document.getElementById('focusStepPill');
+  const focusStepTitle = document.getElementById('focusStepTitle');
+  const focusEquationBox = document.getElementById('focusEquationBox');
+  const partDividend = document.getElementById('partDividend');
+  const partDivisor = document.getElementById('partDivisor');
+  const partQuotient = document.getElementById('partQuotient');
+  const partRemainder = document.getElementById('partRemainder');
+  const focusExplanation = document.getElementById('focusExplanation');
+
   const euclidBarStage = document.getElementById('euclidBarStage');
   const euclidStepsList = document.getElementById('euclidStepsList');
+  const euclidGrandResult = document.getElementById('euclidGrandResult');
+  const grandResultFormula = document.getElementById('grandResultFormula');
+  const grandResultDesc = document.getElementById('grandResultDesc');
 
   function initEuclidLab() {
     state.euclidA = parseInt(euclidInputA.value, 10) || 2024;
@@ -651,22 +853,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentIdx = state.euclidCurrentStep;
     const step = data.steps[currentIdx];
     const total = data.steps.length;
+    const isFinal = currentIdx === total - 1;
 
+    // Stepper header numbers
     document.getElementById('euclidCurrentStepNum').textContent = currentIdx + 1;
     document.getElementById('euclidTotalStepsNum').textContent = total;
+    focusStepPill.textContent = `Step ${currentIdx + 1} of ${total}`;
+    focusStepTitle.textContent = isFinal ? `Final Step: Remainder Reaches 0` : `Dividing ${step.a} by ${step.b}`;
 
-    // Update buttons
+    // Large Equation Box
+    focusEquationBox.innerHTML = `\\(${step.a} = ${step.b} \\times ${step.q} + ${step.r}\\)`;
+
+    // Parts Breakdown
+    partDividend.textContent = step.a;
+    partDivisor.textContent = step.b;
+    partQuotient.textContent = step.q;
+    partRemainder.textContent = step.r;
+
+    // Narrative Explanation
+    if (isFinal) {
+      focusExplanation.innerHTML = `
+        <strong>Final Termination:</strong> ${step.a} is evenly divisible by ${step.b} with remainder <strong>0</strong>.<br>
+        By Euclid's theorem, when the remainder becomes 0, the divisor <strong>${data.gcd}</strong> is the <strong>Greatest Common Divisor</strong>!
+      `;
+    } else {
+      focusExplanation.innerHTML = `
+        Divide ${step.a} by ${step.b}: The divisor fits <strong>${step.q}</strong> full times (${step.b} × ${step.q} = ${step.b * step.q}), leaving a remainder of <strong>${step.r}</strong>.<br>
+        Since remainder \\(\\neq 0\\), we replace the pair: \\(\\gcd(${step.a}, ${step.b}) = \\gcd(${step.b}, ${step.r})\\).
+      `;
+    }
+
+    // Button states
     btnEuclidPrev.disabled = currentIdx === 0;
-    btnEuclidNext.disabled = currentIdx === total - 1;
+    btnEuclidNext.disabled = isFinal;
 
     // Render Geometric Bar Segment Tiling
+    renderBarTiling(step);
+
+    // Render Steps List
+    renderEuclidTable(data, currentIdx);
+
+    // Grand Result Banner
+    if (isFinal) {
+      euclidGrandResult.style.display = 'block';
+      grandResultFormula.innerHTML = `\\(\\gcd(${data.a}, ${data.b}) = \\mathbf{${data.gcd}}\\)`;
+      grandResultDesc.innerHTML = `
+        Solved in just <strong>${total}</strong> simple division steps!<br>
+        Factoring ${data.a} and ${data.b} would have required checking prime factors up to \\(\\sqrt{${data.a}} \\approx ${Math.round(Math.sqrt(data.a))}\\). Euclid finds it instantly!
+      `;
+    } else {
+      euclidGrandResult.style.display = 'none';
+    }
+
+    renderLatexInDOM(document.getElementById('tab-euclid'));
+  }
+
+  function renderBarTiling(step) {
     euclidBarStage.innerHTML = '';
 
-    // Bar 1: Larger number (dividend a)
+    // Bar 1: Dividend
     const rowDividend = document.createElement('div');
     rowDividend.className = 'bar-row';
     rowDividend.innerHTML = `
-      <div class="bar-label">a = ${step.a}</div>
+      <div class="bar-label">Dividend a = ${step.a}</div>
       <div class="bar-track">
         <div class="bar-segment seg-dividend" style="width: 100%;">
           Length ${step.a}
@@ -675,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     euclidBarStage.appendChild(rowDividend);
 
-    // Bar 2: Divisor b tiling q times + remainder r
+    // Bar 2: Divisor repeated q times + Remainder
     const rowTiling = document.createElement('div');
     rowTiling.className = 'bar-row';
 
@@ -699,28 +948,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     rowTiling.innerHTML = `
-      <div class="bar-label">b = ${step.b} × ${step.q}</div>
+      <div class="bar-label">Divisor b = ${step.b} × ${step.q}</div>
       <div class="bar-track">
         ${segmentsHtml}
       </div>
     `;
     euclidBarStage.appendChild(rowTiling);
+  }
 
-    // Render Steps List
+  function renderEuclidTable(data, currentIdx) {
     euclidStepsList.innerHTML = '';
+    const total = data.steps.length;
+
     data.steps.forEach((s, idx) => {
       const card = document.createElement('div');
       card.className = 'step-item-card';
       if (idx === currentIdx) card.classList.add('current-active');
       if (idx === total - 1) card.classList.add('final-step');
 
+      // Click card to jump to that step
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        state.euclidCurrentStep = idx;
+        renderEuclidStep();
+      });
+
       card.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
           <span class="step-index-badge">Step ${s.stepNumber}</span>
-          <div class="step-equation-text">${s.equation}</div>
+          <div class="step-equation-text">\\(${s.equation}\\)</div>
         </div>
         <div class="step-desc-text">
-          ${idx === total - 1 ? `🎉 Remainder is 0! <strong>GCD = ${data.gcd}</strong>` : `Remainder r = ${s.r}`}
+          ${idx === total - 1 ? `🎉 Remainder is 0! <strong>GCD = ${data.gcd}</strong>` : `Remainder r = ${s.r} ⟶ gcd(${s.b}, ${s.r})`}
         </div>
       `;
       euclidStepsList.appendChild(card);
@@ -771,8 +1030,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           stopEuclidAutoPlay();
         }
-      }, 1500);
+      }, 1600);
     }
+  });
+
+  btnToggleAllSteps.addEventListener('click', () => {
+    state.euclidCurrentStep = state.euclidStepsData.steps.length - 1;
+    renderEuclidStep();
   });
 
   euclidStartBtn.addEventListener('click', initEuclidLab);
@@ -785,27 +1049,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const cycleTable = document.getElementById('cycleTable');
 
     const mod = 7;
-    const base = 3;
-    const size = 260;
+    const size = 280;
     const center = size / 2;
-    const radius = 95;
+    const radius = 100;
 
-    // Render Modulo 7 Clock SVG
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
     svg.setAttribute('class', 'clock-svg');
 
-    // Clock background circle
+    // Background circle
     const clockBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     clockBg.setAttribute('cx', center);
     clockBg.setAttribute('cy', center);
     clockBg.setAttribute('r', radius);
     clockBg.setAttribute('fill', '#ffffff');
     clockBg.setAttribute('stroke', '#cbd5e1');
-    clockBg.setAttribute('stroke-width', '2');
+    clockBg.setAttribute('stroke-width', '2.5');
     svg.appendChild(clockBg);
 
-    // Positions for 7 vertices (0 through 6)
+    // Positions for 7 vertices
     const points = [];
     for (let i = 0; i < mod; i++) {
       const angle = (i * (360 / mod) - 90) * (Math.PI / 180);
@@ -814,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
       points.push({ i, x, y });
     }
 
-    // Sequence of powers: 1 -> 3 -> 2 -> 6 -> 4 -> 5 -> 1
+    // Orbit path: 1 -> 3 -> 2 -> 6 -> 4 -> 5 -> 1
     const seq = [1, 3, 2, 6, 4, 5, 1];
     let pathD = '';
     for (let k = 0; k < seq.length; k++) {
@@ -827,8 +1089,8 @@ document.addEventListener('DOMContentLoaded', () => {
     orbitPath.setAttribute('d', pathD);
     orbitPath.setAttribute('fill', 'none');
     orbitPath.setAttribute('stroke', '#3b82f6');
-    orbitPath.setAttribute('stroke-width', '2.5');
-    orbitPath.setAttribute('stroke-dasharray', '5 3');
+    orbitPath.setAttribute('stroke-width', '3');
+    orbitPath.setAttribute('stroke-dasharray', '6 3');
     svg.appendChild(orbitPath);
 
     // Draw vertex badges
@@ -836,10 +1098,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', pt.x);
       circle.setAttribute('cy', pt.y);
-      circle.setAttribute('r', '14');
+      circle.setAttribute('r', '16');
       circle.setAttribute('fill', pt.i === 4 ? '#f59e0b' : '#f8fafc');
       circle.setAttribute('stroke', pt.i === 4 ? '#b45309' : '#94a3b8');
-      circle.setAttribute('stroke-width', '1.5');
+      circle.setAttribute('stroke-width', '2');
       svg.appendChild(circle);
 
       const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -849,8 +1111,8 @@ document.addEventListener('DOMContentLoaded', () => {
       label.setAttribute('dominant-baseline', 'central');
       label.setAttribute('fill', pt.i === 4 ? '#ffffff' : '#0f172a');
       label.setAttribute('font-family', 'Inter, sans-serif');
-      label.setAttribute('font-weight', '800');
-      label.setAttribute('font-size', '12');
+      label.setAttribute('font-weight', '900');
+      label.setAttribute('font-size', '14');
       label.textContent = pt.i;
       svg.appendChild(label);
     });
@@ -858,15 +1120,17 @@ document.addEventListener('DOMContentLoaded', () => {
     clockContainer.innerHTML = '';
     clockContainer.appendChild(svg);
 
-    // Populate Cycle Table
+    // Cycle table
     cycleTable.innerHTML = `
-      <div class="cycle-row-card"><span>3¹ mod 7 = 3</span><span style="color: var(--text-muted);">Step 1</span></div>
-      <div class="cycle-row-card"><span>3² mod 7 = 2</span><span style="color: var(--text-muted);">Step 2</span></div>
-      <div class="cycle-row-card"><span>3³ mod 7 = 6</span><span style="color: var(--text-muted);">Step 3</span></div>
-      <div class="cycle-row-card highlight"><span>★ 3⁴ mod 7 = 4</span><span style="color: #b45309; font-weight: 700;">Target: 2026 ≡ 4 mod 6</span></div>
-      <div class="cycle-row-card"><span>3⁵ mod 7 = 5</span><span style="color: var(--text-muted);">Step 5</span></div>
-      <div class="cycle-row-card"><span>3⁶ mod 7 = 1</span><span style="color: #16a34a; font-weight: 700;">Period Loop (Cycle length = 6)</span></div>
+      <div class="cycle-row-card"><span>\\(3^1 \\equiv 3 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 1</span></div>
+      <div class="cycle-row-card"><span>\\(3^2 \\equiv 2 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 2</span></div>
+      <div class="cycle-row-card"><span>\\(3^3 \\equiv 6 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 3</span></div>
+      <div class="cycle-row-card highlight"><span>★ \\(3^4 \\equiv 4 \\pmod 7\\)</span><span style="color: #b45309; font-weight: 800;">Target: \\(2026 \\equiv 4 \\pmod 6\\)</span></div>
+      <div class="cycle-row-card"><span>\\(3^5 \\equiv 5 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 5</span></div>
+      <div class="cycle-row-card"><span>\\(3^6 \\equiv 1 \\pmod 7\\)</span><span style="color: #16a34a; font-weight: 800;">Cycle repeats (Period = 6)</span></div>
     `;
+
+    renderLatexInDOM(document.getElementById('tab-challenge'));
   }
 
   // Interactive Modulo Calculator
@@ -880,19 +1144,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const out = document.getElementById('modPlayOutput');
 
     out.innerHTML = `
-      <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 14px; border-radius: 10px; color: #065f46;">
-        Result: ${base}<sup>${exp}</sup> ≡ ${res.baseMod}<sup>${exp}</sup> ≡ <strong>${res.result}</strong> (mod ${mod})<br>
-        <span style="font-size: 0.85rem; font-weight: normal; color: #047857;">
-          Period: ${res.cyclePeriod} | Exponent decomposition: ${exp} = ${res.cyclePeriod} × ${res.quotient} + ${res.remainder}
-        </span>
+      <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; padding: 18px 22px; border-radius: 14px; color: #065f46; font-size: 1.15rem;">
+        <strong>Result:</strong> \\(${base}^{${exp}} \\equiv ${res.baseMod}^{${exp}} \\equiv \\mathbf{${res.result}} \\pmod{${mod}}\\)
+        <div style="font-size: 0.95rem; font-weight: 600; color: #047857; margin-top: 8px;">
+          Cycle Period: <strong>${res.cyclePeriod}</strong> &nbsp;|&nbsp; Exponent decomposition: \\(${exp} = ${res.cyclePeriod} \\times ${res.quotient} + ${res.remainder}\\)
+        </div>
       </div>
     `;
+
+    renderLatexInDOM(out);
   });
 
-  // Initial Run
+  /* ==========================================================================
+     Initial App Boot
+     ========================================================================== */
   renderGrid100();
+  updateHoverInspector(60);
+  renderSideDock();
   renderGCDStudio();
   renderLCMStudio();
   initEuclidLab();
   renderWorksheetChallenge();
+
+  // Initial Latex typesetting
+  setTimeout(() => renderLatexInDOM(), 100);
 });
