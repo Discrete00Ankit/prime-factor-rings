@@ -1,7 +1,7 @@
 /**
  * Main Application Logic for Prime Factor Rings Visualizer (Enhanced)
- * Manages UI rendering, SVG generation, live side dock, fluid hover inspector,
- * enhanced step-by-step Euclidean division, and KaTeX math typesetting.
+ * Manages UI rendering, SVG generation, always-visible sticky side dock,
+ * parallel dual-column Euclidean division algorithm, and KaTeX math typesetting.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     euclidB: 748,
     euclidStepsData: null,
     euclidCurrentStep: 0,
-    euclidAutoPlayTimer: null,
-    euclidShowAll: false
+    euclidAutoPlayTimer: null
   };
 
   /* ==========================================================================
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('KaTeX render warning:', err);
       }
     } else {
-      // Offline fallback: transform common math expressions into styled HTML
       renderMathFallback(targetEl);
     }
   }
@@ -101,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
      SVG Prime Ring Generator
      ========================================================================== */
   function createRingSVG(num, options = {}) {
-    const size = options.size || 72;
+    const size = options.size || 68;
     const center = size / 2;
     const outerRadius = options.outerRadius || (size * 0.44);
     const innerRadius = options.innerRadius || (size * 0.30);
@@ -224,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
     textNode.setAttribute('font-family', 'Inter, sans-serif');
     textNode.setAttribute('font-weight', '800');
 
-    // Font size scaling
     let fontSize = size * 0.32;
     if (text.length === 3) fontSize *= 0.85;
     if (text.length >= 4) fontSize *= 0.72;
@@ -282,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
     state.colorMode = state.colorMode === 'paper' ? 'spectrum' : 'paper';
     paletteModeLabel.textContent = state.colorMode === 'paper' ? 'Worksheet Colors' : 'Spectrum Colors';
 
-    // Re-render
     renderGrid100();
     renderSideDock();
     renderGCDStudio();
@@ -291,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     1–100 Visual Grid Controller with Real-time Mouse Hover & Drag
+     1–100 Visual Grid Controller with Mouse Hover/Drag
      ========================================================================== */
   const matrixContainer = document.getElementById('matrixContainer');
   const filterChips = document.querySelectorAll('#filterChips .chip-btn');
@@ -309,10 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (num === state.selectedB) node.classList.add('selected-b');
       if (num === state.hoveredNumber) node.classList.add('hover-active');
 
-      const svg = createRingSVG(num, { size: 70 });
+      const svg = createRingSVG(num, { size: 68 });
       node.appendChild(svg);
 
-      // Real-time Mouse Hover / Drag interaction
+      // Real-time hover / glide updates
       node.addEventListener('mouseenter', () => {
         handleNodeHover(num, node);
       });
@@ -323,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      // Click to toggle or pin as A or B
       node.addEventListener('click', (e) => {
         if (e.shiftKey) {
           setSelectedPair(state.selectedA, num);
@@ -342,12 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleNodeHover(num, nodeElement) {
     state.hoveredNumber = num;
 
-    // Update active hover highlight on cards
     const allNodes = matrixContainer.querySelectorAll('.number-node');
     allNodes.forEach(n => n.classList.remove('hover-active'));
     if (nodeElement) nodeElement.classList.add('hover-active');
 
-    // Update side dock inspector
     updateHoverInspector(num);
   }
 
@@ -424,7 +417,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('headerTagA').textContent = `A: ${a}`;
     document.getElementById('headerTagB').textContent = `B: ${b}`;
 
-    // Update inputs across all panels
     const dockA = document.getElementById('dockInputA');
     const dockB = document.getElementById('dockInputB');
     if (dockA) dockA.value = a;
@@ -440,7 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lcmA) lcmA.value = a;
     if (lcmB) lcmB.value = b;
 
-    // Refresh nodes
     const nodes = matrixContainer.querySelectorAll('.number-node');
     nodes.forEach(node => {
       const n = parseInt(node.dataset.number, 10);
@@ -452,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
-     Homepage Right Side Dock: Hover Inspector + Live GCD & LCM
+     Homepage Sticky Side Dock: Compact Inspector (Always 100% visible)
      ========================================================================== */
   const dockRingWrapper = document.getElementById('dockRingWrapper');
   const dockNumberTitle = document.getElementById('dockNumberTitle');
@@ -475,50 +466,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dockRingWrapper) return;
 
     dockRingWrapper.innerHTML = '';
-    const bigSvg = createRingSVG(num, { size: 96, outerRadius: 42, innerRadius: 28, badgeRadius: 25 });
-    dockRingWrapper.appendChild(bigSvg);
+    // Compact 76px SVG ring for clean vertical fit
+    const ringSvg = createRingSVG(num, { size: 76, outerRadius: 34, innerRadius: 23, badgeRadius: 20 });
+    dockRingWrapper.appendChild(ringSvg);
 
     dockNumberTitle.textContent = num;
     const isP = MathEngine.isPrime(num);
 
     if (num === 1) {
       dockTypeTag.className = 'inspector-tag tag-unit';
-      dockTypeTag.textContent = 'Multiplicative Unit (1)';
+      dockTypeTag.textContent = 'Unit 1';
       dockFormula.innerHTML = `\\(1\\) (Unit element)`;
     } else if (isP) {
       dockTypeTag.className = 'inspector-tag tag-prime';
-      dockTypeTag.textContent = 'Prime Number';
+      dockTypeTag.textContent = 'Prime';
       dockFormula.innerHTML = `\\(${num}\\) (Prime)`;
     } else {
       dockTypeTag.className = 'inspector-tag tag-composite';
-      dockTypeTag.textContent = 'Composite Number';
+      dockTypeTag.textContent = 'Composite';
       dockFormula.innerHTML = `\\(${num} = ${MathEngine.formatFactorization(num)}\\)`;
     }
 
-    // Arc list breakdown
+    // Render Compact Chips for factors
     dockArcBreakdown.innerHTML = '';
     const counts = MathEngine.factorCounts(num);
     const totalArcs = MathEngine.factorize(num).length;
 
     if (num === 1) {
-      dockArcBreakdown.innerHTML = `<div style="font-size: 0.9rem; color: var(--text-muted);">1 has no prime factors. Represented as a neutral grey circle.</div>`;
+      dockArcBreakdown.innerHTML = `<span class="arc-chip-pill" style="border-left: 3px solid #94a3b8;">1 has no prime factors</span>`;
     } else {
       counts.forEach((power, prime) => {
-        const row = document.createElement('div');
-        row.className = 'dock-arc-row';
         const color = MathEngine.getPrimeColor(prime, state.colorMode);
         const arcDeg = Math.round(power * (360 / totalArcs));
 
-        row.innerHTML = `
-          <div class="dock-arc-label">
-            <span class="color-dot" style="background-color: ${color};"></span>
-            <span>Prime ${prime} (${MathEngine.getPrimeLabel(prime, state.colorMode)})</span>
-          </div>
-          <div class="dock-arc-val">
-            ${power} arc${power > 1 ? 's' : ''} (${arcDeg}°)
-          </div>
+        const chip = document.createElement('div');
+        chip.className = 'arc-chip-pill';
+        chip.style.borderLeft = `3.5px solid ${color}`;
+        chip.innerHTML = `
+          <span class="color-dot" style="background-color: ${color}; width: 10px; height: 10px;"></span>
+          <span><strong>${prime}</strong>: ${power} arc${power > 1 ? 's' : ''} (${arcDeg}°)</span>
         `;
-        dockArcBreakdown.appendChild(row);
+        dockArcBreakdown.appendChild(chip);
       });
     }
 
@@ -536,7 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setSelectedPair(state.selectedA, state.hoveredNumber);
   });
 
-  // Live Quick GCD & LCM Dock calculations
   function renderSideDock() {
     const a = parseInt(dockInputA.value, 10) || state.selectedA || 60;
     const b = parseInt(dockInputB.value, 10) || state.selectedB || 72;
@@ -544,17 +531,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const gcdAnalysis = MathEngine.getGCDAnalysis(a, b, state.colorMode);
     const lcmAnalysis = MathEngine.getLCMAnalysis(a, b, state.colorMode);
 
-    // GCD Live Box
     dockGcdFormula.innerHTML = `\\(\\gcd(${a}, ${b}) = ${gcdAnalysis.formula} = \\mathbf{${gcdAnalysis.gcd}}\\)`;
     dockGcdRule.textContent = `Takes min arcs: ${gcdAnalysis.totalMinArcs} arc${gcdAnalysis.totalMinArcs !== 1 ? 's' : ''}`;
     dockGcdRing.innerHTML = '';
-    dockGcdRing.appendChild(createRingSVG(gcdAnalysis.gcd, { size: 58, outerRadius: 26, innerRadius: 18, badgeRadius: 15 }));
+    dockGcdRing.appendChild(createRingSVG(gcdAnalysis.gcd, { size: 50, outerRadius: 22, innerRadius: 15, badgeRadius: 13 }));
 
-    // LCM Live Box
     dockLcmFormula.innerHTML = `\\(\\operatorname{lcm}(${a}, ${b}) = ${lcmAnalysis.formula} = \\mathbf{${lcmAnalysis.lcm.toLocaleString()}}\\)`;
     dockLcmRule.textContent = `Takes max arcs: ${lcmAnalysis.totalMaxArcs} arc${lcmAnalysis.totalMaxArcs !== 1 ? 's' : ''}`;
     dockLcmRing.innerHTML = '';
-    dockLcmRing.appendChild(createRingSVG(lcmAnalysis.lcm, { size: 58, outerRadius: 26, innerRadius: 18, badgeRadius: 15 }));
+    dockLcmRing.appendChild(createRingSVG(lcmAnalysis.lcm, { size: 50, outerRadius: 22, innerRadius: 15, badgeRadius: 13 }));
 
     renderLatexInDOM(dockGcdFormula);
     renderLatexInDOM(dockLcmFormula);
@@ -583,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     GCD Visual Studio Controller (Minimum Arcs Rule)
+     GCD Studio Controller (Minimum Arcs Rule)
      ========================================================================== */
   const gcdInputA = document.getElementById('gcdInputA');
   const gcdInputB = document.getElementById('gcdInputB');
@@ -597,52 +582,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const analysis = MathEngine.getGCDAnalysis(a, b, state.colorMode);
 
-    // Render A
     document.getElementById('gcdValA').textContent = a;
     const fA = document.getElementById('gcdFormulaA');
     fA.innerHTML = `\\(${MathEngine.formatFactorization(a)}\\)`;
     const ringA = document.getElementById('gcdRingA');
     ringA.innerHTML = '';
-    ringA.appendChild(createRingSVG(a, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringA.appendChild(createRingSVG(a, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Render B
     document.getElementById('gcdValB').textContent = b;
     const fB = document.getElementById('gcdFormulaB');
     fB.innerHTML = `\\(${MathEngine.formatFactorization(b)}\\)`;
     const ringB = document.getElementById('gcdRingB');
     ringB.innerHTML = '';
-    ringB.appendChild(createRingSVG(b, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringB.appendChild(createRingSVG(b, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Render Result GCD
     document.getElementById('gcdValRes').textContent = analysis.gcd;
     const fRes = document.getElementById('gcdFormulaRes');
     fRes.innerHTML = `\\(${analysis.formula} = \\mathbf{${analysis.gcd}}\\)`;
     const ringRes = document.getElementById('gcdRingRes');
     ringRes.innerHTML = '';
-    ringRes.appendChild(createRingSVG(analysis.gcd, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringRes.appendChild(createRingSVG(analysis.gcd, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Populate Analysis Table
     const tbody = document.getElementById('gcdTableBody');
     tbody.innerHTML = '';
 
     analysis.breakdown.forEach(row => {
       const tr = document.createElement('tr');
 
-      // Tokens for A
       let tokensA = '';
       for (let i = 0; i < row.countA; i++) {
         tokensA += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
       if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Tokens for B
       let tokensB = '';
       for (let i = 0; i < row.countB; i++) {
         tokensB += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
       if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Result tokens
       let tokensMin = '';
       for (let i = 0; i < row.minCount; i++) {
         tokensMin += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
@@ -686,7 +664,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   gcdCalculateBtn.addEventListener('click', renderGCDStudio);
 
-  // GCD Preset Pills
   document.querySelectorAll('.preset-pill[data-target="gcd"]').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('.preset-pill[data-target="gcd"]').forEach(p => p.classList.remove('active'));
@@ -698,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     LCM Visual Studio Controller (Maximum Arcs Rule)
+     LCM Studio Controller (Maximum Arcs Rule)
      ========================================================================== */
   const lcmInputA = document.getElementById('lcmInputA');
   const lcmInputB = document.getElementById('lcmInputB');
@@ -710,52 +687,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const analysis = MathEngine.getLCMAnalysis(a, b, state.colorMode);
 
-    // Render A
     document.getElementById('lcmValA').textContent = a;
     const fA = document.getElementById('lcmFormulaA');
     fA.innerHTML = `\\(${MathEngine.formatFactorization(a)}\\)`;
     const ringA = document.getElementById('lcmRingA');
     ringA.innerHTML = '';
-    ringA.appendChild(createRingSVG(a, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringA.appendChild(createRingSVG(a, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Render B
     document.getElementById('lcmValB').textContent = b;
     const fB = document.getElementById('lcmFormulaB');
     fB.innerHTML = `\\(${MathEngine.formatFactorization(b)}\\)`;
     const ringB = document.getElementById('lcmRingB');
     ringB.innerHTML = '';
-    ringB.appendChild(createRingSVG(b, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringB.appendChild(createRingSVG(b, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Render Result LCM
     document.getElementById('lcmValRes').textContent = analysis.lcm.toLocaleString();
     const fRes = document.getElementById('lcmFormulaRes');
     fRes.innerHTML = `\\(${analysis.formula} = \\mathbf{${analysis.lcm.toLocaleString()}}\\)`;
     const ringRes = document.getElementById('lcmRingRes');
     ringRes.innerHTML = '';
-    ringRes.appendChild(createRingSVG(analysis.lcm, { size: 120, outerRadius: 52, innerRadius: 36, badgeRadius: 32 }));
+    ringRes.appendChild(createRingSVG(analysis.lcm, { size: 110, outerRadius: 48, innerRadius: 33, badgeRadius: 29 }));
 
-    // Populate Analysis Table
     const tbody = document.getElementById('lcmTableBody');
     tbody.innerHTML = '';
 
     analysis.breakdown.forEach(row => {
       const tr = document.createElement('tr');
 
-      // Tokens for A
       let tokensA = '';
       for (let i = 0; i < row.countA; i++) {
         tokensA += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
       if (row.countA === 0) tokensA = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Tokens for B
       let tokensB = '';
       for (let i = 0; i < row.countB; i++) {
         tokensB += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
       }
       if (row.countB === 0) tokensB = '<span style="color: var(--text-light); font-size: 0.9rem;">None (0)</span>';
 
-      // Result tokens
       let tokensMax = '';
       for (let i = 0; i < row.maxCount; i++) {
         tokensMax += `<span class="mini-arc-token" style="background-color: ${row.color};">${row.prime}</span>`;
@@ -799,7 +769,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   lcmCalculateBtn.addEventListener('click', renderLCMStudio);
 
-  // LCM Preset Pills
   document.querySelectorAll('.preset-pill[data-target="lcm"]').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('.preset-pill[data-target="lcm"]').forEach(p => p.classList.remove('active'));
@@ -811,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     Euclid's Division Algorithm Lab Controller (Enhanced Step-by-Step)
+     Euclid's Division Algorithm (PARALLEL DUAL-COLUMN SOLVING DASHBOARD)
      ========================================================================== */
   const euclidInputA = document.getElementById('euclidInputA');
   const euclidInputB = document.getElementById('euclidInputB');
@@ -820,22 +789,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnEuclidNext = document.getElementById('btnEuclidNext');
   const btnEuclidPlay = document.getElementById('btnEuclidPlay');
   const btnEuclidReset = document.getElementById('btnEuclidReset');
-  const btnToggleAllSteps = document.getElementById('btnToggleAllSteps');
 
-  const focusStepPill = document.getElementById('focusStepPill');
-  const focusStepTitle = document.getElementById('focusStepTitle');
-  const focusEquationBox = document.getElementById('focusEquationBox');
-  const partDividend = document.getElementById('partDividend');
-  const partDivisor = document.getElementById('partDivisor');
-  const partQuotient = document.getElementById('partQuotient');
-  const partRemainder = document.getElementById('partRemainder');
-  const focusExplanation = document.getElementById('focusExplanation');
-
-  const euclidBarStage = document.getElementById('euclidBarStage');
-  const euclidStepsList = document.getElementById('euclidStepsList');
-  const euclidGrandResult = document.getElementById('euclidGrandResult');
+  const euclidStepsCounter = document.getElementById('euclidStepsCounter');
+  const euclidLadderContainer = document.getElementById('euclidLadderContainer');
+  const euclidGrandResultCard = document.getElementById('euclidGrandResultCard');
   const grandResultFormula = document.getElementById('grandResultFormula');
   const grandResultDesc = document.getElementById('grandResultDesc');
+
+  const spotlightStepPill = document.getElementById('spotlightStepPill');
+  const spotlightActionText = document.getElementById('spotlightActionText');
+  const spotlightEquationBox = document.getElementById('spotlightEquationBox');
+  const spotDividend = document.getElementById('spotDividend');
+  const spotDivisor = document.getElementById('spotDivisor');
+  const spotQuotient = document.getElementById('spotQuotient');
+  const spotRemainder = document.getElementById('spotRemainder');
+  const spotlightExplanation = document.getElementById('spotlightExplanation');
+  const barStepNum = document.getElementById('barStepNum');
+  const euclidBarStage = document.getElementById('euclidBarStage');
 
   function initEuclidLab() {
     state.euclidA = parseInt(euclidInputA.value, 10) || 2024;
@@ -843,10 +813,10 @@ document.addEventListener('DOMContentLoaded', () => {
     state.euclidStepsData = MathEngine.getEuclideanSteps(state.euclidA, state.euclidB);
     state.euclidCurrentStep = 0;
     stopEuclidAutoPlay();
-    renderEuclidStep();
+    renderEuclidParallelDashboard();
   }
 
-  function renderEuclidStep() {
+  function renderEuclidParallelDashboard() {
     const data = state.euclidStepsData;
     if (!data || !data.steps.length) return;
 
@@ -855,55 +825,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const total = data.steps.length;
     const isFinal = currentIdx === total - 1;
 
-    // Stepper header numbers
-    document.getElementById('euclidCurrentStepNum').textContent = currentIdx + 1;
-    document.getElementById('euclidTotalStepsNum').textContent = total;
-    focusStepPill.textContent = `Step ${currentIdx + 1} of ${total}`;
-    focusStepTitle.textContent = isFinal ? `Final Step: Remainder Reaches 0` : `Dividing ${step.a} by ${step.b}`;
+    // 1. Update Left Column: Step Counter & Ladder
+    euclidStepsCounter.textContent = `Step ${currentIdx + 1} of ${total}`;
+    euclidLadderContainer.innerHTML = '';
 
-    // Large Equation Box
-    focusEquationBox.innerHTML = `\\(${step.a} = ${step.b} \\times ${step.q} + ${step.r}\\)`;
+    data.steps.forEach((s, idx) => {
+      const card = document.createElement('div');
+      card.className = 'ladder-step-card';
+      if (idx === currentIdx) card.classList.add('active-step');
+      if (idx === total - 1) card.classList.add('final-solved-step');
 
-    // Parts Breakdown
-    partDividend.textContent = step.a;
-    partDivisor.textContent = step.b;
-    partQuotient.textContent = step.q;
-    partRemainder.textContent = step.r;
+      // Click any step directly to jump!
+      card.addEventListener('click', () => {
+        state.euclidCurrentStep = idx;
+        renderEuclidParallelDashboard();
+      });
 
-    // Narrative Explanation
+      card.innerHTML = `
+        <div class="ladder-left">
+          <span class="ladder-num-badge">Step ${s.stepNumber}</span>
+          <span class="ladder-equation">\\(${s.equation}\\)</span>
+        </div>
+        <div class="ladder-tag">
+          ${idx === total - 1 
+            ? `🎉 <strong>r = 0 ⟶ GCD = ${data.gcd}</strong>` 
+            : `r = ${s.r} ⟶ (${s.b}, ${s.r})`}
+        </div>
+      `;
+      euclidLadderContainer.appendChild(card);
+    });
+
+    // Grand Result Box at the base of the left column
+    grandResultFormula.innerHTML = `\\(\\gcd(${data.a}, ${data.b}) = \\mathbf{${data.gcd}}\\)`;
+    grandResultDesc.innerHTML = `
+      The last non-zero remainder was <strong>${data.gcd}</strong>.<br>
+      Solved in <strong>${total}</strong> division steps without testing any prime factors!
+    `;
+
+    // 2. Update Right Column: Spotlight Focus & Arithmetic Metrics
+    spotlightStepPill.textContent = `Step ${currentIdx + 1} of ${total} Spotlight`;
+    spotlightActionText.textContent = isFinal ? `Final Step: Remainder Reaches 0` : `Dividing ${step.a} by ${step.b}`;
+    spotlightEquationBox.innerHTML = `\\(${step.a} = ${step.b} \\times ${step.q} + ${step.r}\\)`;
+
+    spotDividend.textContent = step.a;
+    spotDivisor.textContent = step.b;
+    spotQuotient.textContent = step.q;
+    spotRemainder.textContent = step.r;
+
     if (isFinal) {
-      focusExplanation.innerHTML = `
-        <strong>Final Termination:</strong> ${step.a} is evenly divisible by ${step.b} with remainder <strong>0</strong>.<br>
-        By Euclid's theorem, when the remainder becomes 0, the divisor <strong>${data.gcd}</strong> is the <strong>Greatest Common Divisor</strong>!
+      spotlightExplanation.innerHTML = `
+        <strong>Algorithm Terminates:</strong> ${step.a} is divided evenly by ${step.b} with remainder <strong>0</strong>.<br>
+        Therefore, the divisor from this step (<strong>${data.gcd}</strong>) is the <strong>Greatest Common Divisor</strong>!
       `;
     } else {
-      focusExplanation.innerHTML = `
-        Divide ${step.a} by ${step.b}: The divisor fits <strong>${step.q}</strong> full times (${step.b} × ${step.q} = ${step.b * step.q}), leaving a remainder of <strong>${step.r}</strong>.<br>
-        Since remainder \\(\\neq 0\\), we replace the pair: \\(\\gcd(${step.a}, ${step.b}) = \\gcd(${step.b}, ${step.r})\\).
+      spotlightExplanation.innerHTML = `
+        Divide ${step.a} by ${step.b}: Fits <strong>${step.q}</strong> times (${step.b} × ${step.q} = ${step.b * step.q}) with remainder <strong>${step.r}</strong>.<br>
+        Since remainder \\(\\neq 0\\), by Euclid's theorem: \\(\\gcd(${step.a}, ${step.b}) = \\gcd(${step.b}, ${step.r})\\).
       `;
     }
 
-    // Button states
-    btnEuclidPrev.disabled = currentIdx === 0;
-    btnEuclidNext.disabled = isFinal;
-
-    // Render Geometric Bar Segment Tiling
+    // 3. Update Right Column: Geometric Segment Tiling Bar
+    barStepNum.textContent = currentIdx + 1;
     renderBarTiling(step);
 
-    // Render Steps List
-    renderEuclidTable(data, currentIdx);
-
-    // Grand Result Banner
-    if (isFinal) {
-      euclidGrandResult.style.display = 'block';
-      grandResultFormula.innerHTML = `\\(\\gcd(${data.a}, ${data.b}) = \\mathbf{${data.gcd}}\\)`;
-      grandResultDesc.innerHTML = `
-        Solved in just <strong>${total}</strong> simple division steps!<br>
-        Factoring ${data.a} and ${data.b} would have required checking prime factors up to \\(\\sqrt{${data.a}} \\approx ${Math.round(Math.sqrt(data.a))}\\). Euclid finds it instantly!
-      `;
-    } else {
-      euclidGrandResult.style.display = 'none';
-    }
+    // Button States
+    btnEuclidPrev.disabled = currentIdx === 0;
+    btnEuclidNext.disabled = isFinal;
 
     renderLatexInDOM(document.getElementById('tab-euclid'));
   }
@@ -948,42 +935,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     rowTiling.innerHTML = `
-      <div class="bar-label">Divisor b = ${step.b} × ${step.q}</div>
+      <div class="bar-label">b = ${step.b} × ${step.q}</div>
       <div class="bar-track">
         ${segmentsHtml}
       </div>
     `;
     euclidBarStage.appendChild(rowTiling);
-  }
-
-  function renderEuclidTable(data, currentIdx) {
-    euclidStepsList.innerHTML = '';
-    const total = data.steps.length;
-
-    data.steps.forEach((s, idx) => {
-      const card = document.createElement('div');
-      card.className = 'step-item-card';
-      if (idx === currentIdx) card.classList.add('current-active');
-      if (idx === total - 1) card.classList.add('final-step');
-
-      // Click card to jump to that step
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', () => {
-        state.euclidCurrentStep = idx;
-        renderEuclidStep();
-      });
-
-      card.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <span class="step-index-badge">Step ${s.stepNumber}</span>
-          <div class="step-equation-text">\\(${s.equation}\\)</div>
-        </div>
-        <div class="step-desc-text">
-          ${idx === total - 1 ? `🎉 Remainder is 0! <strong>GCD = ${data.gcd}</strong>` : `Remainder r = ${s.r} ⟶ gcd(${s.b}, ${s.r})`}
-        </div>
-      `;
-      euclidStepsList.appendChild(card);
-    });
   }
 
   function stopEuclidAutoPlay() {
@@ -997,21 +954,21 @@ document.addEventListener('DOMContentLoaded', () => {
   btnEuclidNext.addEventListener('click', () => {
     if (state.euclidStepsData && state.euclidCurrentStep < state.euclidStepsData.steps.length - 1) {
       state.euclidCurrentStep++;
-      renderEuclidStep();
+      renderEuclidParallelDashboard();
     }
   });
 
   btnEuclidPrev.addEventListener('click', () => {
     if (state.euclidCurrentStep > 0) {
       state.euclidCurrentStep--;
-      renderEuclidStep();
+      renderEuclidParallelDashboard();
     }
   });
 
   btnEuclidReset.addEventListener('click', () => {
     stopEuclidAutoPlay();
     state.euclidCurrentStep = 0;
-    renderEuclidStep();
+    renderEuclidParallelDashboard();
   });
 
   btnEuclidPlay.addEventListener('click', () => {
@@ -1021,22 +978,17 @@ document.addEventListener('DOMContentLoaded', () => {
       btnEuclidPlay.textContent = '⏸ Pause';
       if (state.euclidCurrentStep === state.euclidStepsData.steps.length - 1) {
         state.euclidCurrentStep = 0;
-        renderEuclidStep();
+        renderEuclidParallelDashboard();
       }
       state.euclidAutoPlayTimer = setInterval(() => {
         if (state.euclidCurrentStep < state.euclidStepsData.steps.length - 1) {
           state.euclidCurrentStep++;
-          renderEuclidStep();
+          renderEuclidParallelDashboard();
         } else {
           stopEuclidAutoPlay();
         }
-      }, 1600);
+      }, 1500);
     }
-  });
-
-  btnToggleAllSteps.addEventListener('click', () => {
-    state.euclidCurrentStep = state.euclidStepsData.steps.length - 1;
-    renderEuclidStep();
   });
 
   euclidStartBtn.addEventListener('click', initEuclidLab);
@@ -1049,15 +1001,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cycleTable = document.getElementById('cycleTable');
 
     const mod = 7;
-    const size = 280;
+    const size = 260;
     const center = size / 2;
-    const radius = 100;
+    const radius = 95;
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
     svg.setAttribute('class', 'clock-svg');
 
-    // Background circle
     const clockBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     clockBg.setAttribute('cx', center);
     clockBg.setAttribute('cy', center);
@@ -1067,7 +1018,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clockBg.setAttribute('stroke-width', '2.5');
     svg.appendChild(clockBg);
 
-    // Positions for 7 vertices
     const points = [];
     for (let i = 0; i < mod; i++) {
       const angle = (i * (360 / mod) - 90) * (Math.PI / 180);
@@ -1076,7 +1026,6 @@ document.addEventListener('DOMContentLoaded', () => {
       points.push({ i, x, y });
     }
 
-    // Orbit path: 1 -> 3 -> 2 -> 6 -> 4 -> 5 -> 1
     const seq = [1, 3, 2, 6, 4, 5, 1];
     let pathD = '';
     for (let k = 0; k < seq.length; k++) {
@@ -1093,12 +1042,11 @@ document.addEventListener('DOMContentLoaded', () => {
     orbitPath.setAttribute('stroke-dasharray', '6 3');
     svg.appendChild(orbitPath);
 
-    // Draw vertex badges
     points.forEach(pt => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', pt.x);
       circle.setAttribute('cy', pt.y);
-      circle.setAttribute('r', '16');
+      circle.setAttribute('r', '15');
       circle.setAttribute('fill', pt.i === 4 ? '#f59e0b' : '#f8fafc');
       circle.setAttribute('stroke', pt.i === 4 ? '#b45309' : '#94a3b8');
       circle.setAttribute('stroke-width', '2');
@@ -1112,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
       label.setAttribute('fill', pt.i === 4 ? '#ffffff' : '#0f172a');
       label.setAttribute('font-family', 'Inter, sans-serif');
       label.setAttribute('font-weight', '900');
-      label.setAttribute('font-size', '14');
+      label.setAttribute('font-size', '13');
       label.textContent = pt.i;
       svg.appendChild(label);
     });
@@ -1120,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clockContainer.innerHTML = '';
     clockContainer.appendChild(svg);
 
-    // Cycle table
     cycleTable.innerHTML = `
       <div class="cycle-row-card"><span>\\(3^1 \\equiv 3 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 1</span></div>
       <div class="cycle-row-card"><span>\\(3^2 \\equiv 2 \\pmod 7\\)</span><span style="color: var(--text-muted);">Power 2</span></div>
@@ -1144,9 +1091,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const out = document.getElementById('modPlayOutput');
 
     out.innerHTML = `
-      <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; padding: 18px 22px; border-radius: 14px; color: #065f46; font-size: 1.15rem;">
+      <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; padding: 16px 20px; border-radius: 14px; color: #065f46; font-size: 1.1rem;">
         <strong>Result:</strong> \\(${base}^{${exp}} \\equiv ${res.baseMod}^{${exp}} \\equiv \\mathbf{${res.result}} \\pmod{${mod}}\\)
-        <div style="font-size: 0.95rem; font-weight: 600; color: #047857; margin-top: 8px;">
+        <div style="font-size: 0.95rem; font-weight: 600; color: #047857; margin-top: 6px;">
           Cycle Period: <strong>${res.cyclePeriod}</strong> &nbsp;|&nbsp; Exponent decomposition: \\(${exp} = ${res.cyclePeriod} \\times ${res.quotient} + ${res.remainder}\\)
         </div>
       </div>
@@ -1166,6 +1113,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initEuclidLab();
   renderWorksheetChallenge();
 
-  // Initial Latex typesetting
   setTimeout(() => renderLatexInDOM(), 100);
 });

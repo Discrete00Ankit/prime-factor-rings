@@ -26,7 +26,6 @@
       <div class="logo-area">
         <svg class="logo-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <circle cx="50" cy="50" r="46" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
-          <!-- Sample 60 ring (2 green, 1 purple, 1 orange) -->
           <path d="M 50 8 A 42 42 0 0 1 89 36 L 79 40 A 30 30 0 0 0 50 20 Z" fill="#16a34a"/>
           <path d="M 92 48 A 42 42 0 0 1 68 90 L 63 79 A 30 30 0 0 0 80 48 Z" fill="#16a34a"/>
           <path d="M 58 92 A 42 42 0 0 1 12 65 L 23 59 A 30 30 0 0 0 56 80 Z" fill="#9333ea"/>
@@ -112,7 +111,7 @@
   <main class="container">
 
     <!-- =======================================================================
-         TAB 1: 1–100 Visual Grid with INTEGRATED Live GCD/LCM Side Dock
+         TAB 1: 1–100 Visual Grid with ALWAYS VISIBLE Sticky Side Dock
          ======================================================================= -->
     <section id="tab-grid" class="tab-content active">
       <div class="grid-split-layout">
@@ -123,7 +122,7 @@
             <div class="card-header">
               <div class="card-title-group">
                 <h2>The 1 to 100 Prime Factor Matrix</h2>
-                <p>Drag or move your mouse over any circle to inspect its factor arcs in real-time. Click to pin as A or B.</p>
+                <p>Drag or hover your mouse over any circle to inspect its factor arcs in real-time. Click to pin as A or B.</p>
               </div>
               <div class="quick-preset-btns">
                 <span style="font-size: 0.9rem; color: var(--text-muted); margin-right: 6px;">Worksheet Presets:</span>
@@ -158,30 +157,34 @@
           </div>
         </div>
 
-        <!-- Right Side Dock: Live Hover Inspector + Live GCD/LCM Calculator -->
+        <!-- Right Side Dock: STICKY & FULLY VISIBLE Prime Factorization & Quick Solver -->
         <aside class="grid-side-dock">
           
-          <!-- Card 1: Live Hover Inspector -->
+          <!-- Card 1: Prime Factorization Inspector (Sleek, Compact, Always 100% visible) -->
           <div class="card side-dock-card hover-inspector-card">
             <div class="dock-card-header">
               <span class="dock-header-pill">🔍 Hover Inspector</span>
-              <span class="dock-subtext">Move mouse over any circle</span>
+              <span class="dock-subtext">Glides with mouse</span>
             </div>
 
-            <div class="inspector-body">
-              <div class="inspector-ring-wrapper" id="dockRingWrapper">
-                <!-- Live SVG Ring -->
+            <div class="inspector-compact-layout">
+              <div class="inspector-ring-col">
+                <div class="inspector-ring-wrapper" id="dockRingWrapper">
+                  <!-- Live SVG Ring -->
+                </div>
               </div>
-              <div class="inspector-info">
-                <div class="inspector-number-title" id="dockNumberTitle">60</div>
-                <div class="inspector-tag tag-composite" id="dockTypeTag">Composite Number</div>
+              <div class="inspector-meta-col">
+                <div class="inspector-title-row">
+                  <span class="inspector-number-title" id="dockNumberTitle">60</span>
+                  <span class="inspector-tag tag-composite" id="dockTypeTag">Composite</span>
+                </div>
                 <div class="inspector-formula" id="dockFormula">\(60 = 2^2 \times 3 \times 5\)</div>
               </div>
             </div>
 
-            <!-- Prime arc breakdown bars -->
-            <div class="inspector-arcs-breakdown" id="dockArcBreakdown">
-              <!-- Dynamically updated -->
+            <!-- Prime arc breakdown badges (Horizontal compact chips) -->
+            <div class="inspector-chips-wrapper" id="dockArcBreakdown">
+              <!-- Dynamically updated compact chips -->
             </div>
 
             <div class="dock-actions">
@@ -190,13 +193,13 @@
             </div>
           </div>
 
-          <!-- Card 2: Live Quick GCD & LCM Calculator (No navigation required!) -->
+          <!-- Card 2: Live Quick GCD & LCM Calculator -->
           <div class="card side-dock-card quick-gcd-lcm-card">
             <div class="dock-card-header">
               <span class="dock-header-pill" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">
                 ⚡ Live GCD & LCM Solver
               </span>
-              <span class="dock-subtext">Calculates instantly</span>
+              <span class="dock-subtext">Instant Calculation</span>
             </div>
 
             <!-- Inputs inside side dock -->
@@ -219,9 +222,7 @@
                 <div class="quick-res-formula" id="dockGcdFormula">\(\gcd(60, 72) = 2^2 \times 3 = \mathbf{12}\)</div>
                 <div class="quick-res-rule" id="dockGcdRule">Takes \(\min\) powers: \(2^2 \times 3^1\)</div>
               </div>
-              <div class="quick-res-ring" id="dockGcdRing">
-                <!-- Mini Ring for GCD -->
-              </div>
+              <div class="quick-res-ring" id="dockGcdRing"></div>
             </div>
 
             <!-- Quick LCM Output -->
@@ -231,9 +232,7 @@
                 <div class="quick-res-formula" id="dockLcmFormula">\(\operatorname{lcm}(60, 72) = 2^3 \times 3^2 \times 5 = \mathbf{360}\)</div>
                 <div class="quick-res-rule" id="dockLcmRule">Takes \(\max\) powers: \(2^3 \times 3^2 \times 5^1\)</div>
               </div>
-              <div class="quick-res-ring" id="dockLcmRing">
-                <!-- Mini Ring for LCM -->
-              </div>
+              <div class="quick-res-ring" id="dockLcmRing"></div>
             </div>
 
             <!-- Quick Jump Buttons -->
@@ -324,9 +323,7 @@
                 <th>Included in GCD?</th>
               </tr>
             </thead>
-            <tbody id="gcdTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
+            <tbody id="gcdTableBody"></tbody>
           </table>
 
           <div class="info-callout callout-green">
@@ -414,44 +411,31 @@
                 <th>Included in LCM?</th>
               </tr>
             </thead>
-            <tbody id="lcmTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
+            <tbody id="lcmTableBody"></tbody>
           </table>
 
-          <!-- Conservation Principle Card -->
           <div class="info-callout callout-purple">
             <strong>The Arc Conservation Theorem:</strong><br>
             Notice that for every prime color: \(\min(\nu_p(A), \nu_p(B)) + \max(\nu_p(A), \nu_p(B)) = \nu_p(A) + \nu_p(B)\).<br>
-            Hence, multiplying all prime factors gives the famous theorem:
+            Hence, multiplying all prime factors gives the theorem:
             <div style="font-size: 1.35rem; font-weight: 800; margin: 10px 0; font-family: var(--font-mono);">
               \(\gcd(A, B) \times \operatorname{lcm}(A, B) = A \times B\)
             </div>
-            For 60 & 72: \(12 \times 360 = 4,320\), and \(60 \times 72 = 4,320\). Every prime arc in A and B is conserved!
+            For 60 & 72: \(12 \times 360 = 4,320 = 60 \times 72\). Every prime arc in A and B is conserved!
           </div>
         </div>
       </div>
     </section>
 
     <!-- =======================================================================
-         TAB 4: Euclid's Algorithm Lab (ENHANCED STEP-BY-STEP DISPLAY)
+         TAB 4: Euclid's Algorithm Lab (NEW PARALLEL SOLVING DASHBOARD)
          ======================================================================= -->
     <section id="tab-euclid" class="tab-content">
-      <div class="card">
-        <div class="euclid-hero-intro">
-          <h3>When Prime Arcs Become Too Hard to Count: Euclid's Division Algorithm</h3>
-          <p>
-            For small numbers like 12 or 60, factoring into primes and drawing arcs is simple. But for large numbers (such as <strong>2,024</strong> and <strong>748</strong>), finding prime factors requires searching for primes up to \(\sqrt{N}\)—a computationally hard problem! Counting dozens of tiny arcs around a ring becomes unwieldy.
-          </p>
-          <p style="margin-top: 8px;">
-            Euclid discovered over 2,300 years ago that you can find the GCD in logarithmic steps without factoring a single number, using repeated division with remainder:
-            <strong>\(\gcd(a, b) = \gcd(b, a \bmod b)\)</strong>.
-          </p>
-        </div>
-
+      <div class="card euclid-main-card">
+        
         <!-- Controls Row -->
-        <div class="euclid-controls-row">
-          <div class="inputs-group">
+        <div class="euclid-top-bar">
+          <div class="euclid-input-cluster">
             <div class="input-num-wrapper">
               <label for="euclidInputA">Number A:</label>
               <input type="number" id="euclidInputA" class="input-num" value="2024" min="1" max="10000000">
@@ -463,90 +447,114 @@
             <button class="btn-primary" id="euclidStartBtn">Run Division Algorithm</button>
           </div>
 
-          <!-- Stepper Buttons & Mode Toggle -->
-          <div class="euclid-actions-right">
-            <div class="stepper-btns">
-              <button class="step-btn" id="btnEuclidPrev" title="Previous division step">◀ Previous</button>
-              <button class="step-btn btn-play" id="btnEuclidPlay" title="Auto-advance through steps">▶ Auto-Play</button>
-              <button class="step-btn" id="btnEuclidNext" title="Next division step">Next Step ▶</button>
-              <button class="step-btn" id="btnEuclidReset" title="Reset stepper">↺ Reset</button>
-            </div>
-            <button class="palette-toggle-btn" id="btnToggleAllSteps">📋 Show All Steps</button>
+          <!-- Stepper Buttons & Auto-Play -->
+          <div class="euclid-stepper-cluster">
+            <button class="step-btn" id="btnEuclidPrev" title="Previous division step">◀ Previous</button>
+            <button class="step-btn btn-play" id="btnEuclidPlay" title="Auto-advance through steps">▶ Auto-Play</button>
+            <button class="step-btn" id="btnEuclidNext" title="Next division step">Next Step ▶</button>
+            <button class="step-btn" id="btnEuclidReset" title="Reset stepper">↺ Reset</button>
           </div>
         </div>
 
-        <!-- Step-by-Step Progressive Card Showcase -->
-        <div class="euclid-current-focus-card" id="euclidFocusCard">
-          <div class="focus-card-header">
-            <div class="focus-step-pill" id="focusStepPill">Step 1 of 5</div>
-            <div class="focus-title" id="focusStepTitle">Dividing 2024 by 748</div>
-          </div>
+        <!-- PARALLEL VIEW: Full Solving Process on Left + Geometry & Spotlight on Right -->
+        <div class="euclid-parallel-layout">
 
-          <!-- Main Division Equation Display -->
-          <div class="focus-equation-box" id="focusEquationBox">
-            \(2024 = 748 \times 2 + 528\)
-          </div>
-
-          <!-- Component Values Breakdown -->
-          <div class="euclid-parts-grid">
-            <div class="part-cell">
-              <div class="part-label">Dividend (a)</div>
-              <div class="part-val" id="partDividend" style="color: #2563eb;">2024</div>
+          <!-- Left Column: Entire Solving Process (Visible at all times!) -->
+          <div class="euclid-process-column">
+            <div class="parallel-col-header">
+              <div class="col-title-badge">
+                <span class="col-icon">📋</span>
+                <h3>Full Division Algorithm Pipeline</h3>
+              </div>
+              <span class="step-counter-tag" id="euclidStepsCounter">Step 1 of 5</span>
             </div>
-            <div class="part-cell">
-              <div class="part-label">Divisor (b)</div>
-              <div class="part-val" id="partDivisor" style="color: #059669;">748</div>
-            </div>
-            <div class="part-cell">
-              <div class="part-label">Quotient (q)</div>
-              <div class="part-val" id="partQuotient" style="color: #7c3aed;">2</div>
-            </div>
-            <div class="part-cell">
-              <div class="part-label">Remainder (r)</div>
-              <div class="part-val" id="partRemainder" style="color: #ea580c;">528</div>
-            </div>
-          </div>
-
-          <!-- Explanatory Narrative -->
-          <div class="focus-explanation" id="focusExplanation">
-            Divide 2024 by 748: 748 fits 2 full times (\(748 \times 2 = 1496\)), leaving a remainder of 528. Since remainder \(\neq 0\), the GCD of \((2024, 748)\) is identical to \(\gcd(748, 528)\).
-          </div>
-        </div>
-
-        <!-- Geometric Bar Visualization -->
-        <div class="euclid-visual-panel">
-          <div class="card-title-group">
-            <h3>Geometric Segment Tiling (Step <span id="euclidCurrentStepNum">1</span> of <span id="euclidTotalStepsNum">5</span>)</h3>
-            <p>Visualizing how the divisor repeated block fits into the dividend bar, leaving the highlighted remainder block.</p>
-          </div>
-
-          <div class="bar-stage" id="euclidBarStage">
-            <!-- Dynamically generated bars for dividend and divisor tiling -->
-          </div>
-        </div>
-
-        <!-- Full Step-by-Step Table / Progression List -->
-        <div class="analysis-panel">
-          <div class="card-title-group" style="margin-bottom: 14px;">
-            <h3>Step-by-Step Division History & Table</h3>
-            <p>Each step computes \(a = b \times q + r\). When the remainder reaches 0, the last non-zero remainder is the GCD!</p>
-          </div>
-
-          <div class="euclid-steps-list" id="euclidStepsList">
-            <!-- Dynamically populated list of equations -->
-          </div>
-
-          <!-- Final Grand Conclusion Banner -->
-          <div class="euclid-grand-result" id="euclidGrandResult" style="display: none;">
-            <div class="grand-result-badge">🎉 Solution Reached</div>
-            <div class="grand-result-formula" id="grandResultFormula">
-              \(\gcd(2024, 748) = \mathbf{44}\)
-            </div>
-            <p class="grand-result-desc" id="grandResultDesc">
-              Found in just 5 division steps without needing to factor 2024 (\(2^3 \times 11 \times 23\)) or 748 (\(2^2 \times 11 \times 17\))!
+            <p class="parallel-col-desc">
+              All steps displayed parallelly. Click any step to inspect it. Watch how each remainder \(r\) becomes the new divisor!
             </p>
+
+            <!-- Complete Step Ladder Container -->
+            <div class="euclid-ladder-container" id="euclidLadderContainer">
+              <!-- Dynamically populated step cards with active highlight -->
+            </div>
+
+            <!-- Grand Result Box (Always visible at the base of the pipeline) -->
+            <div class="euclid-grand-result-card" id="euclidGrandResultCard">
+              <div class="grand-result-badge">🎉 Solution Reached</div>
+              <div class="grand-result-formula" id="grandResultFormula">
+                \(\gcd(2024, 748) = \mathbf{44}\)
+              </div>
+              <p class="grand-result-desc" id="grandResultDesc">
+                Last non-zero remainder is <strong>44</strong>. Found in just 5 division steps without factoring!
+              </p>
+            </div>
           </div>
+
+          <!-- Right Column: Parallel Step Spotlight & Geometric Tiling -->
+          <div class="euclid-spotlight-column">
+            
+            <!-- Active Step Spotlight Card -->
+            <div class="spotlight-card">
+              <div class="spotlight-header">
+                <span class="spotlight-pill" id="spotlightStepPill">Step 1 Spotlight</span>
+                <span class="spotlight-action-text" id="spotlightActionText">Dividing 2024 by 748</span>
+              </div>
+
+              <!-- Main Division Equation Display -->
+              <div class="spotlight-equation-box" id="spotlightEquationBox">
+                \(2024 = 748 \times 2 + 528\)
+              </div>
+
+              <!-- 4 Component Pills (Dividend, Divisor, Quotient, Remainder) -->
+              <div class="spotlight-parts-row">
+                <div class="spot-part-cell part-a">
+                  <span class="part-name">Dividend (a)</span>
+                  <span class="part-val" id="spotDividend">2024</span>
+                </div>
+                <div class="spot-part-cell part-b">
+                  <span class="part-name">Divisor (b)</span>
+                  <span class="part-val" id="spotDivisor">748</span>
+                </div>
+                <div class="spot-part-cell part-q">
+                  <span class="part-name">Quotient (q)</span>
+                  <span class="part-val" id="spotQuotient">2</span>
+                </div>
+                <div class="spot-part-cell part-r">
+                  <span class="part-name">Remainder (r)</span>
+                  <span class="part-val" id="spotRemainder">528</span>
+                </div>
+              </div>
+
+              <!-- Explanatory Narrative -->
+              <div class="spotlight-explanation" id="spotlightExplanation">
+                Divide 2024 by 748: Fits 2 full times (\(748 \times 2 = 1496\)), leaving a remainder of 528. Since remainder \(\neq 0\), \(\gcd(2024, 748) = \gcd(748, 528)\).
+              </div>
+            </div>
+
+            <!-- Geometric Segment Tiling Bar Card -->
+            <div class="spotlight-tiling-card">
+              <div class="tiling-card-header">
+                <h4>Geometric Segment Tiling (Step <span id="barStepNum">1</span>)</h4>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Divisor block fits \(q\) times + remainder gap</span>
+              </div>
+              <div class="bar-stage" id="euclidBarStage">
+                <!-- Dynamically generated bars for dividend and divisor tiling -->
+              </div>
+            </div>
+
+            <!-- Pedagogical Insight: Why Euclid Beats Factoring -->
+            <div class="spotlight-insight-card">
+              <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px;">
+                💡 Pedagogical Insight: Euclid vs. Prime Arcs
+              </div>
+              <p style="font-size: 0.88rem; color: #475569; line-height: 1.55;">
+                Factoring \(2024 = 2^3 \times 11 \times 23\) and \(748 = 2^2 \times 11 \times 17\) requires testing every prime up to \(\sqrt{2024} \approx 45\). Counting dozens of arcs is slow and error-prone. Euclid finds \(\gcd = 44\) in only 5 division steps without testing a single prime!
+              </p>
+            </div>
+
+          </div>
+
         </div>
+
       </div>
     </section>
 
@@ -612,14 +620,10 @@
             <h4 style="font-size: 1.05rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.05em;">
               Modular Orbit on Clock (mod 7)
             </h4>
-            <div id="modClockContainer">
-              <!-- Dynamically generated SVG clock dial -->
-            </div>
+            <div id="modClockContainer"></div>
 
             <!-- Cycle table -->
-            <div class="cycle-steps-container" style="width: 100%; margin-top: 18px;" id="cycleTable">
-              <!-- Dynamically loaded cycle steps -->
-            </div>
+            <div class="cycle-steps-container" style="width: 100%; margin-top: 18px;" id="cycleTable"></div>
           </div>
         </div>
 
